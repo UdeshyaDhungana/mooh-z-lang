@@ -6,4 +6,8 @@ Build using
 make
 ```
 
+Run the REPL
 
+```bash
+./build/interprerer
+```
