@@ -116,7 +116,7 @@ func (l *Lexer) readIdentifier() string {
 	for utils.IsLetter(l.ch) {
 		l.readRune()
 	}
-	return l.input[position:l.position]
+	return l.input[position:l.readPosition]
 }
 
 func (l *Lexer) readNumber() string {
@@ -124,7 +124,7 @@ func (l *Lexer) readNumber() string {
 	for utils.IsDigit(l.ch) {
 		l.readRune()
 	}
-	return l.input[position:l.position]
+	return l.input[position:l.readPosition]
 }
 
 func (l *Lexer) skipWhiteSpace() {
