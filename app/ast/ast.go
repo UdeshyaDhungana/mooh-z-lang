@@ -1,0 +1,125 @@
+package ast
+
+import (
+	"bytes"
+
+	"github.com/udeshyadhungana/interprerer/app/token"
+)
+
+type Node interface {
+	TokenLiteral() string
+	String() string
+}
+
+type Expression interface {
+	Node
+	expressionNode()
+}
+
+type Statement interface {
+	Node
+	statementNode()
+}
+
+type Program struct {
+	Statements []Statement
+}
+
+func (p *Program) String() string {
+	var out bytes.Buffer
+
+	for _, s := range p.Statements {
+		out.WriteString(s.String())
+	}
+
+	return out.String()
+}
+
+func (p *Program) TokenLiteral() string {
+	if len(p.Statements) > 0 {
+		return p.Statements[0].TokenLiteral()
+	} else {
+		return ""
+	}
+}
+
+/* ThoosMuji statement */
+type ThoosMujiStatement struct {
+	Token token.Token
+	Name  *Identifier
+	Value Expression
+}
+
+func (tms *ThoosMujiStatement) statementNode()       {}
+func (tms *ThoosMujiStatement) TokenLiteral() string { return tms.Token.Literal }
+
+func (tms *ThoosMujiStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(tms.TokenLiteral() + " ")
+	out.WriteString(tms.Name.String())
+	out.WriteString(" = ")
+
+	if tms.Value != nil {
+		out.WriteString(tms.Value.String())
+	}
+	out.WriteString(";")
+	return out.String()
+}
+
+/* Identifier */
+
+type Identifier struct {
+	Token token.Token
+	Value string
+}
+
+func (i *Identifier) expressionNode()      {}
+func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
+func (i *Identifier) String() string       { return i.Value }
+
+/* Integer literal */
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
+func (il *IntegerLiteral) expressionNode()      {}
+func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+
+/* Pathamuji statement */
+type PathaMujiStatement struct {
+	Token token.Token
+	Value Expression
+}
+
+func (pms *PathaMujiStatement) statementNode()       {}
+func (pms *PathaMujiStatement) TokenLiteral() string { return pms.Token.Literal }
+
+func (pms *PathaMujiStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(pms.TokenLiteral() + " ")
+	if pms.Value != nil {
+		out.WriteString(pms.Value.String())
+	}
+
+	out.WriteString(";")
+	return out.String()
+}
+
+/* Expression statement */
+type ExpressionStatement struct {
+	Token      token.Token
+	Expression Expression
+}
+
+func (es *ExpressionStatement) statementNode()       {}
+func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
+func (es *ExpressionStatement) String() string {
+	if es.Expression != nil {
+		return es.Expression.String()
+	}
+	return ""
+}

@@ -116,7 +116,7 @@ func (l *Lexer) readIdentifier() string {
 	for utils.IsLetter(l.ch) {
 		l.readRune()
 	}
-	return l.input[position:l.readPosition]
+	return l.input[position:l.position]
 }
 
 func (l *Lexer) readNumber() string {
@@ -124,7 +124,7 @@ func (l *Lexer) readNumber() string {
 	for utils.IsDigit(l.ch) {
 		l.readRune()
 	}
-	return l.input[position:l.readPosition]
+	return l.input[position:l.position]
 }
 
 func (l *Lexer) skipWhiteSpace() {
@@ -142,3 +142,11 @@ func (l *Lexer) peekChar() byte {
 }
 
 // maybe we will need peekRune?
+func (l *Lexer) peekRune() rune {
+	if l.readPosition >= len(l.input) {
+		l.ch = 0
+		return 1
+	}
+	r, _ := utf8.DecodeRuneInString(l.input[l.readPosition:])
+	return r
+}
