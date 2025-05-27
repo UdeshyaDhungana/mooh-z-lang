@@ -46,6 +46,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.LPAREN:   CALL,
 }
 
 func NewParser(l *lexer.Lexer) *Parser {
@@ -59,6 +60,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.JHUT_MUJI, p.parseBoolean)
 	p.registerPrefix(token.SACHO_MUJI, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseLeftParenthesis)
+	p.registerPrefix(token.KAAM_GAR_MUJI, p.parseKaamGarMuji)
 
 	// infix functions for operators
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -311,6 +313,35 @@ func (p *Parser) parseLeftParenthesis() ast.Expression {
 		return nil
 	}
 	return exp
+}
+
+func (p *Parser) parseKaamGarMuji() ast.Expression {
+	result := ast.KaamGarMujiExpression{Token: p.curToken}
+	if !p.curTokenIs(token.KAAM_GAR_MUJI) {
+		return nil
+	}
+	p.nextToken()
+	if !p.curTokenIs(token.LPAREN) {
+		return nil
+	}
+	if p.peekTokenIs(token.RPAREN) {
+		result.Arguments = nil
+		p.nextToken()
+	} else {
+		p.nextToken()
+		for {
+			currentArg := p.parseIdentifier()
+			result.Arguments = append(result.Arguments, &currentArg)
+			p.nextToken()
+			if p.curTokenIs(token.RPAREN) {
+				break
+			}
+			p.nextToken()
+		}
+	}
+	p.nextToken()
+	result.Body = p.parseBlockStatement()
+	return &result
 }
 
 func (p *Parser) peekPrecedence() int {

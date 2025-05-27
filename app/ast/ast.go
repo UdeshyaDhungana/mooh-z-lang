@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/udeshyadhungana/interprerer/app/token"
 )
@@ -216,6 +217,59 @@ func (y *YediMujiStatement) String() string {
 		out.WriteString("nabhae_chikne ")
 		out.WriteString(y.Alternative.String())
 	}
+
+	return out.String()
+}
+
+// kaam_gar
+type KaamGarMujiExpression struct {
+	Token     token.Token
+	Arguments []*Expression
+	Body      *BlockStatement
+}
+
+func (f *KaamGarMujiExpression) expressionNode()      {}
+func (f *KaamGarMujiExpression) TokenLiteral() string { return f.Token.Literal }
+func (f *KaamGarMujiExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("kaam_gar_muji(")
+
+	if f.Arguments != nil {
+		for i, arg := range f.Arguments {
+			out.WriteString((*arg).String())
+			if i != len(f.Arguments)-1 {
+				out.WriteString(",")
+				out.WriteString(" ")
+			}
+		}
+	}
+	out.WriteString(") ")
+	out.WriteString(f.Body.String())
+
+	return out.String()
+}
+
+// call expression
+type CallExpression struct {
+	Token     token.Token
+	Function  Expression
+	Arguments []Expression
+}
+
+func (f *CallExpression) expressionNode()      {}
+func (f *CallExpression) TokenLiteral() string { return f.Token.Literal }
+func (f *CallExpression) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+	for _, a := range f.Arguments {
+		args = append(args, a.String())
+	}
+	out.WriteString(f.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
 
 	return out.String()
 }

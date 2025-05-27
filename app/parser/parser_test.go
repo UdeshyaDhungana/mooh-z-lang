@@ -276,6 +276,24 @@ func testLiteral(t *testing.T, il ast.Expression, value any) bool {
 		return true
 	}
 
+	id, ok := il.(*ast.Identifier)
+	if ok {
+		v, ok := value.(string)
+		if !ok {
+			t.Errorf("value is not string. got=%T", b)
+			return false
+		}
+		if id.Value != v {
+			t.Errorf("id.Value not %s, got=%s", v, id.Value)
+		}
+
+		if id.Token.Type != token.IDFIER {
+			t.Errorf("identifier.TokenLiteral not %s, got=%s\n", token.IDFIER, id.Token.Type)
+			return false
+		}
+		return true
+	}
+
 	t.Errorf("il is not *ast.IntegerLiteral or *ast.Boolean. got=%T", il)
 	return false
 }
@@ -397,6 +415,18 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"3 > 5 == sacho_muji",
 			"((3 > 5) == sacho_muji)",
 		},
+		{
+			"a + add(b * c) + d",
+			"((a + add((b * c))) + d)",
+		},
+		{
+			"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+			"add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+		},
+		{
+			"add(a + b + c * d / f + g)",
+			"add((((a + b) + ((c * d) / f)) + g))",
+		},
 	}
 
 	for _, tt := range tests {
@@ -412,10 +442,6 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			t.Errorf("expected=[%q], got=[%q]", tt.expected, actual)
 		}
 	}
-}
-
-func testInfixExpression(t *testing.T, expression ast.Expression, s string) bool {
-	return expression.String() == s
 }
 
 func TestYediMujiStatementParsing(t *testing.T) {
@@ -448,11 +474,49 @@ func TestYediMujiStatementParsing(t *testing.T) {
 		if len(program.Statements) != 1 {
 			t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
 		}
-		stmt, ok := program.Statements[0].(*ast.YediMujiStatement)
+		_, ok := program.Statements[0].(*ast.YediMujiStatement)
 		if !ok {
 			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
 		}
+	}
+}
 
-		fmt.Println(stmt.String())
+func TestKaamGarMujiLiteral(t *testing.T) {
+	tests := []struct {
+		literal        string
+		expectedParams []string
+	}{
+		{
+			"kaam_gar_muji(x, y) { patha_muji x + y; }",
+			[]string{"x", "y"},
+		},
+		{
+			"kaam_gar_muji() { patha_muji 3; }",
+			[]string{},
+		},
+		{
+			"kaam_gar_muji(a, b, c) { patha_muji a + b + c; }",
+			[]string{"a", "b", "c"},
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.literal)
+		p := NewParser(l)
+		program := p.ParseProgram()
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
+		}
+		stmt := program.Statements[0].(*ast.ExpressionStatement)
+		f := stmt.Expression.(*ast.KaamGarMujiExpression)
+
+		if len(f.Arguments) != len(tt.expectedParams) {
+			t.Errorf("length parameters wrong. want %d, got=%d\n", len(tt.expectedParams), len(f.Arguments))
+		}
+
+		for i, ident := range tt.expectedParams {
+			testLiteral(t, *f.Arguments[i], ident)
+		}
 	}
 }
