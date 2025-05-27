@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/udeshyadhungana/interprerer/app/lexer"
-	"github.com/udeshyadhungana/interprerer/app/token"
+	"github.com/udeshyadhungana/interprerer/app/parser"
 )
 
 const PROMPT = "(lekh_muji) >> "
@@ -22,9 +22,21 @@ func Start(in io.Reader, out io.Writer) {
 		}
 		line := scanner.Text()
 		l := lexer.NewLexer(line)
+		p := parser.NewParser(l)
 
-		for tok := l.NextToken(); tok.Type != token.EOF; tok = l.NextToken() {
-			fmt.Printf("%+v\n", tok)
+		program := p.ParseProgram()
+		if len(p.Errors()) != 0 {
+			printParserErrors(out, p.Errors())
+			continue
 		}
+
+		io.WriteString(out, program.String())
+		io.WriteString(out, "\n")
+	}
+}
+
+func printParserErrors(out io.Writer, errors []string) {
+	for _, msg := range errors {
+		io.WriteString(out, "\t"+msg+"\n")
 	}
 }
