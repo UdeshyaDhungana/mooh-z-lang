@@ -59,8 +59,8 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.JHUT_MUJI, p.parseBoolean)
 	p.registerPrefix(token.SACHO_MUJI, p.parseBoolean)
-	p.registerPrefix(token.LPAREN, p.parseLeftParenthesis)
 	p.registerPrefix(token.KAAM_GAR_MUJI, p.parseKaamGarMuji)
+	p.registerPrefix(token.LPAREN, p.parseLeftParenthesis)
 
 	// infix functions for operators
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -72,6 +72,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -156,7 +157,13 @@ func (p *Parser) parseThoosMujiStatement() *ast.ThoosMujiStatement {
 
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
-	for !p.curTokenIs(token.SEMICOLON) {
+	if !p.expectPeek(token.ASSIGN) {
+		return nil
+	}
+	p.nextToken()
+
+	stmt.Value = p.parseExpression(LOWEST)
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
@@ -165,9 +172,14 @@ func (p *Parser) parseThoosMujiStatement() *ast.ThoosMujiStatement {
 
 func (p *Parser) parsePathaMujiStatement() *ast.PathaMujiStatement {
 	stmt := &ast.PathaMujiStatement{Token: p.curToken}
-	for !p.curTokenIs(token.SEMICOLON) {
+
+	p.nextToken()
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+
 	return stmt
 }
 
@@ -313,6 +325,31 @@ func (p *Parser) parseLeftParenthesis() ast.Expression {
 		return nil
 	}
 	return exp
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	result := ast.CallExpression{Token: p.curToken, Function: function}
+	result.Arguments = p.parseArguments()
+	return &result
+}
+
+func (p *Parser) parseArguments() []ast.Expression {
+	args := []ast.Expression{}
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return nil
+	}
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	return args
 }
 
 func (p *Parser) parseKaamGarMuji() ast.Expression {
