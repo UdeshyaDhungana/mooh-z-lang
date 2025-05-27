@@ -7,7 +7,7 @@ import (
 )
 
 func TestNextToken(t *testing.T) {
-	input := `thoos_muji five = 5;
+	input := `thoos_muji 界 = 5;
 	thoos_muji ten = 10;
 	
 	thoos_muji add = kaam_gar_muji(x, y) {
@@ -33,7 +33,7 @@ func TestNextToken(t *testing.T) {
 		expectedLiteral string
 	}{
 		{token.THOOS_MUJI, "thoos_muji"},
-		{token.IDFIER, "five"},
+		{token.IDFIER, "5️⃣"},
 		{token.ASSIGN, "="},
 		{token.INT, "5"},
 		{token.SEMICOLON, ";"},

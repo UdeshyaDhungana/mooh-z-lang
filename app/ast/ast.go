@@ -123,3 +123,99 @@ func (es *ExpressionStatement) String() string {
 	}
 	return ""
 }
+
+type PrefixExpression struct {
+	Token    token.Token
+	Operator string
+	Right    Expression
+}
+
+func (pe *PrefixExpression) expressionNode()      {}
+func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PrefixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type InfixExpression struct {
+	Token    token.Token
+	Left     Expression
+	Operator string
+	Right    Expression
+}
+
+func (ie *InfixExpression) expressionNode()      {}
+func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *InfixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(" " + ie.Operator + " ")
+	out.WriteString(ie.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+// Boolean
+type Boolean struct {
+	Token token.Token
+	Value bool
+}
+
+func (b *Boolean) expressionNode()      {}
+func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
+func (b *Boolean) String() string       { return b.Token.Literal }
+
+// block
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (y *BlockStatement) statementNode()       {}
+func (y *BlockStatement) TokenLiteral() string { return y.Token.Literal }
+func (y *BlockStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("{\n")
+	for _, s := range y.Statements {
+		out.WriteString(s.String())
+	}
+	out.WriteString("\n} ")
+
+	return out.String()
+}
+
+// YEDI MUJI Satement
+type YediMujiStatement struct {
+	Token       token.Token
+	Condition   Expression
+	Consequent  *BlockStatement
+	Alternative *BlockStatement
+}
+
+func (y *YediMujiStatement) statementNode()       {}
+func (y *YediMujiStatement) TokenLiteral() string { return y.Token.Literal }
+func (y *YediMujiStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("yedi_muji (")
+	out.WriteString(y.Condition.String())
+	out.WriteString(") ")
+	out.WriteString(y.Consequent.String())
+
+	if y.Alternative != nil {
+		out.WriteString("nabhae_chikne ")
+		out.WriteString(y.Alternative.String())
+	}
+
+	return out.String()
+}

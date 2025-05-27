@@ -23,7 +23,7 @@ type Parser struct {
 
 	/* For pratt's parser */
 	prefixParseFns map[token.TokenType]prefixParseFn
-	infixParseFn   map[token.TokenType]infixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 const (
@@ -37,12 +37,39 @@ const (
 	CALL
 )
 
+var precedences = map[token.TokenType]int{
+	token.EQ:       EQUALS,
+	token.NOT_EQ:   EQUALS,
+	token.LT:       LESSGREATER,
+	token.GT:       LESSGREATER,
+	token.PLUS:     SUM,
+	token.MINUS:    SUM,
+	token.SLASH:    PRODUCT,
+	token.ASTERISK: PRODUCT,
+}
+
 func NewParser(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
 
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	p.registerPrefix(token.IDFIER, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+	p.registerPrefix(token.BANG, p.parsePrefixExpression)
+	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+	p.registerPrefix(token.JHUT_MUJI, p.parseBoolean)
+	p.registerPrefix(token.SACHO_MUJI, p.parseBoolean)
+	p.registerPrefix(token.LPAREN, p.parseLeftParenthesis)
+
+	// infix functions for operators
+	p.infixParseFns = make(map[token.TokenType]infixParseFn)
+	p.registerInfix(token.PLUS, p.parseInfixExpression)
+	p.registerInfix(token.MINUS, p.parseInfixExpression)
+	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
+	p.registerInfix(token.SLASH, p.parseInfixExpression)
+	p.registerInfix(token.GT, p.parseInfixExpression)
+	p.registerInfix(token.LT, p.parseInfixExpression)
+	p.registerInfix(token.EQ, p.parseInfixExpression)
+	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -88,7 +115,7 @@ func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
 }
 
 func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
-	p.infixParseFn[tokenType] = fn
+	p.infixParseFns[tokenType] = fn
 }
 
 func (p *Parser) ParseProgram() *ast.Program {
@@ -111,6 +138,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseThoosMujiStatement()
 	case token.PATHA_MUJI:
 		return p.parsePathaMujiStatement()
+	case token.YEDI_MUJI:
+		return p.parseYediMujiStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -140,6 +169,55 @@ func (p *Parser) parsePathaMujiStatement() *ast.PathaMujiStatement {
 	return stmt
 }
 
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	bs := &ast.BlockStatement{Token: p.curToken}
+	s := []ast.Statement{}
+	if !p.curTokenIs(token.LBRACE) {
+		return nil
+	}
+	p.nextToken()
+	for p.curToken.Type != token.RBRACE {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			s = append(s, stmt)
+		}
+		p.nextToken()
+	}
+	p.nextToken()
+	bs.Statements = s
+	return bs
+}
+
+func (p *Parser) parseYediMujiStatement() *ast.YediMujiStatement {
+	stmt := &ast.YediMujiStatement{Token: p.curToken}
+	if !p.curTokenIs(token.YEDI_MUJI) {
+		return nil
+	}
+	p.nextToken()
+	if !p.curTokenIs(token.LPAREN) {
+		return nil
+	}
+	// evaluate expression
+	p.nextToken()
+	stmt.Condition = p.parseExpression(LOWEST)
+	p.nextToken()
+	if !p.curTokenIs(token.RPAREN) && !p.peekTokenIs(token.LBRACE) {
+		return nil
+	}
+	p.nextToken()
+
+	stmt.Consequent = p.parseBlockStatement()
+
+	if !p.curTokenIs(token.NABHAE_CHIKNE) {
+		return stmt
+	}
+
+	p.nextToken()
+	stmt.Alternative = p.parseBlockStatement()
+
+	return stmt
+}
+
 /* expressions */
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
@@ -152,17 +230,39 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return stmt
 }
 
+// the most beautiful function of this program
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
+		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
 	leftExp := prefix()
+
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+		infix := p.infixParseFns[p.peekToken.Type]
+		if infix == nil {
+			return leftExp
+		}
+		p.nextToken()
+		leftExp = infix(leftExp)
+	}
 	return leftExp
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	switch p.curToken.Type {
+	case token.SACHO_MUJI:
+		return &ast.Boolean{Token: p.curToken, Value: true}
+	case token.JHUT_MUJI:
+		return &ast.Boolean{Token: p.curToken, Value: false}
+	default:
+		panic(fmt.Sprintf("not a boolean: %s\n", p.curToken.Literal))
+	}
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
@@ -175,4 +275,54 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	}
 	lit.Value = value
 	return lit
+}
+
+func (p *Parser) noPrefixParseFnError(t token.TokenType) {
+	msg := fmt.Sprintf("no prefix parse function for (%s) found", t)
+	p.errors = append(p.errors, msg)
+}
+
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	expression := &ast.PrefixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
+	}
+	p.nextToken()
+	expression.Right = p.parseExpression(PREFIX)
+	return expression
+}
+
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InfixExpression{
+		Token:    p.curToken,
+		Left:     left,
+		Operator: p.curToken.Literal,
+	}
+	precedence := p.curPrecedence()
+	p.nextToken()
+	expression.Right = p.parseExpression(precedence)
+	return expression
+}
+
+func (p *Parser) parseLeftParenthesis() ast.Expression {
+	p.nextToken()
+	exp := p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	return exp
+}
+
+func (p *Parser) peekPrecedence() int {
+	if p, ok := precedences[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) curPrecedence() int {
+	if p, ok := precedences[p.curToken.Type]; ok {
+		return p
+	}
+	return LOWEST
 }

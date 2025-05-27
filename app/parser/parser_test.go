@@ -1,10 +1,12 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/udeshyadhungana/interprerer/app/ast"
 	"github.com/udeshyadhungana/interprerer/app/lexer"
+	"github.com/udeshyadhungana/interprerer/app/token"
 )
 
 func checkParserErrors(t *testing.T, p *Parser) {
@@ -164,5 +166,293 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	}
 	if literal.TokenLiteral() != "555" {
 		t.Errorf("literal.TokenLiteral not %s. got=%s", "555", literal.TokenLiteral())
+	}
+}
+
+func TestBooleanLiteralExpression(t *testing.T) {
+	input := "jhut_muji;"
+
+	l := lexer.NewLexer(input)
+	p := NewParser(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	literal, ok := stmt.Expression.(*ast.Boolean)
+	if !ok {
+		t.Fatalf("exp not *ast.IntegerLiteral. got=%T", stmt.Expression)
+	}
+	if literal.Value != false {
+		t.Errorf("literal.Value is not %t. got=%t", false, literal.Value)
+	}
+	if literal.TokenLiteral() != "jhut_muji" {
+		t.Errorf("literal.TokenLiteral not %s. got=%s", "555", literal.TokenLiteral())
+	}
+}
+
+func TestParsingPrefixExpressions(t *testing.T) {
+	prefixTests := []struct {
+		input    string
+		operator string
+		value    interface{}
+	}{
+		{"!5;", "!", int64(5)},
+		{"-15;", "-", int64(15)},
+		{"!jhut_muji", "!", false},
+		{"!sacho_muji", "!", true},
+	}
+
+	for _, tt := range prefixTests {
+		l := lexer.NewLexer(tt.input)
+		p := NewParser(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain %d statements. Got=%d\n", 1, len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not an ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+
+		exp, ok := stmt.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("stmt is not ast.PrefixExpression. got=%T", stmt.Expression)
+		}
+		if exp.Operator != tt.operator {
+			t.Fatalf("exp.Operator is not %s. got=%s", tt.operator, exp.Operator)
+		}
+
+		if !testLiteral(t, exp.Right, tt.value) {
+			return
+		}
+	}
+}
+
+func testLiteral(t *testing.T, il ast.Expression, value any) bool {
+	integ, ok := il.(*ast.IntegerLiteral)
+	if ok {
+		v, ok := value.(int64)
+		if !ok {
+			t.Errorf("value is not int64. got=%T", v)
+			return false
+		}
+		if integ.Value != v {
+			t.Errorf("integ.Value not (%d). got=(%d)", v, integ.Value)
+			return false
+		}
+
+		if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
+			t.Errorf("integ.TokenLiteral not %s. got=%s", value, integ.TokenLiteral())
+			return false
+		}
+		return true
+	}
+	b, ok := il.(*ast.Boolean)
+	if ok {
+		v, ok := value.(bool)
+		if !ok {
+			t.Errorf("value is not bool. got=%T", b)
+			return false
+		}
+		if b.Value != v {
+			t.Errorf("boolean.Value not %t, got=%t", v, b.Value)
+			return false
+		}
+
+		if b.Token.Type != token.JHUT_MUJI && b.Token.Type != token.SACHO_MUJI {
+			t.Errorf("boolean.TokenLiteral not %s or %s. got=%s", token.SACHO_MUJI, token.JHUT_MUJI, b.TokenLiteral())
+			return false
+		}
+		return true
+	}
+
+	t.Errorf("il is not *ast.IntegerLiteral or *ast.Boolean. got=%T", il)
+	return false
+}
+
+func TestParsingInixExpressions(t *testing.T) {
+	infixTests := []struct {
+		input      string
+		leftValue  int64
+		operator   string
+		rightValue int64
+	}{
+		{"5 + 5;", 5, "+", 5},
+		{"5 - 5;", 5, "-", 5},
+		{"5 * 5;", 5, "*", 5},
+		{"5 / 5;", 5, "/", 5},
+		{"5 > 5;", 5, ">", 5},
+		{"5 < 5;", 5, "<", 5},
+		{"5 == 5;", 5, "==", 5},
+		{"5 != 5;", 5, "!=", 5},
+	}
+
+	for _, tt := range infixTests {
+		l := lexer.NewLexer(tt.input)
+		p := NewParser(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain %d elements. got=%d\n", 1, len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+
+		exp, ok := stmt.Expression.(*ast.InfixExpression)
+		if !ok {
+			t.Fatalf("exp is not ast.InfixExpression. got=%T", stmt.Expression)
+		}
+
+		if !testLiteral(t, exp.Left, tt.leftValue) {
+			return
+		}
+
+		if exp.Operator != tt.operator {
+			t.Fatalf("exp.Operator is not '%s'. got=%s", tt.operator, exp.Operator)
+		}
+
+		if !testLiteral(t, exp.Right, tt.rightValue) {
+			return
+		}
+	}
+}
+
+func TestOperatorPrecedenceParsing(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"},
+		{"-a * b",
+			"((-a) * b)"},
+		{"!-a",
+			"(!(-a))"},
+		{
+			"a + b + c",
+			"((a + b) + c)",
+		},
+		{
+			"a + b - c",
+			"((a + b) - c)",
+		},
+		{
+			"a * b * c",
+			"((a * b) * c)",
+		},
+		{
+			"a * b / c",
+			"((a * b) / c)",
+		},
+		{
+			"a + b / c",
+			"(a + (b / c))",
+		},
+		{
+			"a + b * c + d / e - f",
+			"(((a + (b * c)) + (d / e)) - f)",
+		},
+		{
+			"3 + 4; -5 * 5",
+			"(3 + 4)((-5) * 5)",
+		},
+		{
+			"5 > 4 == 3 < 4",
+			"((5 > 4) == (3 < 4))",
+		},
+		{
+			"5 < 4 != 3 > 4",
+			"((5 < 4) != (3 > 4))",
+		},
+		{
+			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+		{
+			"sacho_muji",
+			"sacho_muji",
+		},
+		{
+			"jhut_muji",
+			"jhut_muji",
+		},
+		{
+			"3 < 5 == jhut_muji",
+			"((3 < 5) == jhut_muji)",
+		},
+		{
+			"3 > 5 == sacho_muji",
+			"((3 > 5) == sacho_muji)",
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.input)
+		p := NewParser(l)
+
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		actual := program.String()
+
+		if actual != tt.expected {
+			t.Errorf("expected=[%q], got=[%q]", tt.expected, actual)
+		}
+	}
+}
+
+func testInfixExpression(t *testing.T, expression ast.Expression, s string) bool {
+	return expression.String() == s
+}
+
+func TestYediMujiStatementParsing(t *testing.T) {
+	tests := []struct {
+		program  string
+		expected string
+	}{
+		{
+			`yedi_muji (2 + 3 == 5) {
+		1;
+		}`,
+			"",
+		},
+		{
+			`yedi_muji (sacho_muji) {
+			23;
+			} nabhae_chikne {
+			43 
+			}`,
+			"",
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.program)
+		p := NewParser(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
+		}
+		stmt, ok := program.Statements[0].(*ast.YediMujiStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+
+		fmt.Println(stmt.String())
 	}
 }

@@ -29,7 +29,7 @@ func (l *Lexer) NextToken() token.Token {
 	case '=':
 		if l.peekChar() == '=' {
 			ch := l.ch
-			l.readChar()
+			l.readRune()
 			tok = token.NewTokenFromStr(token.EQ, string(ch)+string(l.ch))
 		} else {
 			tok = token.NewToken(token.ASSIGN, l.ch)
@@ -48,7 +48,7 @@ func (l *Lexer) NextToken() token.Token {
 	case '!':
 		if l.peekChar() == '=' {
 			ch := l.ch
-			l.readChar()
+			l.readRune()
 			tok = token.NewTokenFromStr(token.NOT_EQ, string(ch)+string(l.ch))
 		} else {
 			tok = token.NewToken(token.BANG, l.ch)
@@ -91,24 +91,16 @@ func (l *Lexer) NextToken() token.Token {
 }
 
 func (l *Lexer) readRune() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0
-		return
-	}
-	r, size := utf8.DecodeRuneInString(l.input[l.readPosition:])
-	l.ch = r
-	l.position = l.readPosition
-	l.readPosition += size
-}
-
-func (l *Lexer) readChar() {
+	var r rune
+	var size int
 	if l.readPosition >= len(l.input) {
 		l.ch = 0
 	} else {
-		l.ch = rune(l.input[l.readPosition])
-		l.position = l.readPosition
-		l.readPosition += 1
+		r, size = utf8.DecodeRuneInString(l.input[l.readPosition:])
 	}
+	l.ch = r
+	l.position = l.readPosition
+	l.readPosition += size
 }
 
 func (l *Lexer) readIdentifier() string {
@@ -142,11 +134,3 @@ func (l *Lexer) peekChar() byte {
 }
 
 // maybe we will need peekRune?
-func (l *Lexer) peekRune() rune {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0
-		return 1
-	}
-	r, _ := utf8.DecodeRuneInString(l.input[l.readPosition:])
-	return r
-}
