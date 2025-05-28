@@ -25,7 +25,7 @@ func checkParserErrors(t *testing.T, p *Parser) {
 
 func TestThoosMujiStatements(t *testing.T) {
 	input := `
-	thoos_muji x = 34;
+	thoos_muji x = 4;
 	thoos_muji y = x;
 	thoos_muji foobar = 234543;
 	`
@@ -205,8 +205,8 @@ func TestParsingPrefixExpressions(t *testing.T) {
 	}{
 		{"!5;", "!", int64(5)},
 		{"-15;", "-", int64(15)},
-		{"!jhut_muji", "!", false},
-		{"!sacho_muji", "!", true},
+		{"!jhut_muji;", "!", false},
+		{"!sacho_muji;", "!", true},
 	}
 
 	for _, tt := range prefixTests {
@@ -354,78 +354,78 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"},
-		{"-a * b",
-			"((-a) * b)"},
-		{"!-a",
-			"(!(-a))"},
+		{"1 + (2 + 3) + 4;", "((1 + (2 + 3)) + 4);"},
+		{"-a * b;",
+			"((-a) * b);"},
+		{"!-a;",
+			"(!(-a));"},
 		{
-			"a + b + c",
-			"((a + b) + c)",
+			"a + b + c;",
+			"((a + b) + c);",
 		},
 		{
-			"a + b - c",
-			"((a + b) - c)",
+			"a + b - c;",
+			"((a + b) - c);",
 		},
 		{
-			"a * b * c",
-			"((a * b) * c)",
+			"a * b * c;",
+			"((a * b) * c);",
 		},
 		{
-			"a * b / c",
-			"((a * b) / c)",
+			"a * b / c;",
+			"((a * b) / c);",
 		},
 		{
-			"a + b / c",
-			"(a + (b / c))",
+			"a + b / c;",
+			"(a + (b / c));",
 		},
 		{
-			"a + b * c + d / e - f",
-			"(((a + (b * c)) + (d / e)) - f)",
+			"a + b * c + d / e - f;",
+			"(((a + (b * c)) + (d / e)) - f);",
 		},
 		{
-			"3 + 4; -5 * 5",
-			"(3 + 4)((-5) * 5)",
+			"3 + 4; -5 * 5;",
+			"(3 + 4);((-5) * 5);",
 		},
 		{
-			"5 > 4 == 3 < 4",
-			"((5 > 4) == (3 < 4))",
+			"5 > 4 == 3 < 4;",
+			"((5 > 4) == (3 < 4));",
 		},
 		{
-			"5 < 4 != 3 > 4",
-			"((5 < 4) != (3 > 4))",
+			"5 < 4 != 3 > 4;",
+			"((5 < 4) != (3 > 4));",
 		},
 		{
-			"3 + 4 * 5 == 3 * 1 + 4 * 5",
-			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+			"3 + 4 * 5 == 3 * 1 + 4 * 5;",
+			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));",
 		},
 		{
-			"sacho_muji",
-			"sacho_muji",
+			"sacho_muji;",
+			"sacho_muji;",
 		},
 		{
-			"jhut_muji",
-			"jhut_muji",
+			"jhut_muji;",
+			"jhut_muji;",
 		},
 		{
-			"3 < 5 == jhut_muji",
-			"((3 < 5) == jhut_muji)",
+			"3 < 5 == jhut_muji;",
+			"((3 < 5) == jhut_muji);",
 		},
 		{
-			"3 > 5 == sacho_muji",
-			"((3 > 5) == sacho_muji)",
+			"3 > 5 == sacho_muji;",
+			"((3 > 5) == sacho_muji);",
 		},
 		{
-			"a + add(b * c) + d",
-			"((a + add((b * c))) + d)",
+			"a + add(b * c) + d;",
+			"((a + add((b * c))) + d);",
 		},
 		{
-			"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
-			"add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+			"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8));",
+			"add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)));",
 		},
 		{
-			"add(a + b + c * d / f + g)",
-			"add((((a + b) + ((c * d) / f)) + g))",
+			"add(a + b + c * d / f + g);",
+			"add((((a + b) + ((c * d) / f)) + g));",
 		},
 	}
 
@@ -452,15 +452,15 @@ func TestYediMujiStatementParsing(t *testing.T) {
 		{
 			`yedi_muji (2 + 3 == 5) {
 		1;
-		}`,
+		};`,
 			"",
 		},
 		{
 			`yedi_muji (sacho_muji) {
 			23;
 			} nabhae_chikne {
-			43 
-			}`,
+			43;
+			};`,
 			"",
 		},
 	}
@@ -481,21 +481,21 @@ func TestYediMujiStatementParsing(t *testing.T) {
 	}
 }
 
-func TestKaamGarMujiLiteral(t *testing.T) {
+func TestKaamGarMujiStatement(t *testing.T) {
 	tests := []struct {
 		literal        string
 		expectedParams []string
 	}{
 		{
-			"kaam_gar_muji(x, y) { patha_muji x + y; }",
+			"kaam_gar_muji(x, y) { patha_muji x + y; };",
 			[]string{"x", "y"},
 		},
 		{
-			"kaam_gar_muji() { patha_muji 3; }",
+			"kaam_gar_muji() { patha_muji 3; };",
 			[]string{},
 		},
 		{
-			"kaam_gar_muji(a, b, c) { patha_muji a + b + c; }",
+			"kaam_gar_muji(a, b, c) { patha_muji a + b + c; };",
 			[]string{"a", "b", "c"},
 		},
 	}
@@ -508,8 +508,14 @@ func TestKaamGarMujiLiteral(t *testing.T) {
 		if len(program.Statements) != 1 {
 			t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
 		}
-		stmt := program.Statements[0].(*ast.ExpressionStatement)
-		f := stmt.Expression.(*ast.KaamGarMujiExpression)
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok || stmt == nil {
+			t.Fatalf("program.Statements[0] is not *ast.ExpressionStatement")
+		}
+		f, ok := stmt.Expression.(*ast.KaamGarMujiExpression)
+		if !ok || f == nil {
+			t.Fatalf("stmt.Expression is not *ast.KaamGarMujiExpression")
+		}
 
 		if len(f.Arguments) != len(tt.expectedParams) {
 			t.Errorf("length parameters wrong. want %d, got=%d\n", len(tt.expectedParams), len(f.Arguments))
@@ -518,5 +524,25 @@ func TestKaamGarMujiLiteral(t *testing.T) {
 		for i, ident := range tt.expectedParams {
 			testLiteral(t, *f.Arguments[i], ident)
 		}
+	}
+}
+
+func TestCustom(t *testing.T) {
+	tests := []struct {
+		statement string
+		expected  string
+	}{
+		{
+			"thoos_muji x = kaam_gar_muji(x) { patha_muji x; };",
+			"thoos_muji x = kaam_gar_muji(x) { patha_muji x; };",
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.statement)
+		p := NewParser(l)
+
+		program := p.ParseProgram()
+		fmt.Println(program.String())
 	}
 }

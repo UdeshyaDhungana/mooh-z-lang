@@ -127,12 +127,26 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 	for p.curToken.Type != token.EOF {
 		stmt := p.parseStatement()
-		if stmt != nil {
-			program.Statements = append(program.Statements, stmt)
-		}
+		program.Statements = append(program.Statements, stmt)
 		p.nextToken()
 	}
 	return program
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	bs := &ast.BlockStatement{Token: p.curToken}
+	s := []ast.Statement{}
+	if !p.curTokenIs(token.LBRACE) {
+		return nil
+	}
+	p.nextToken()
+	for p.curToken.Type != token.RBRACE {
+		stmt := p.parseStatement()
+		s = append(s, stmt)
+		p.nextToken()
+	}
+	bs.Statements = s
+	return bs
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -166,6 +180,10 @@ func (p *Parser) parseThoosMujiStatement() *ast.ThoosMujiStatement {
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+	if !p.curTokenIs(token.SEMICOLON) {
+		p.errors = append(p.errors, "expected semicolon at the end of statement")
+		return nil
+	}
 
 	return stmt
 }
@@ -179,27 +197,11 @@ func (p *Parser) parsePathaMujiStatement() *ast.PathaMujiStatement {
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+	if !p.curTokenIs(token.SEMICOLON) {
+		p.errors = append(p.errors, "expected semicolon at the end of statement")
+	}
 
 	return stmt
-}
-
-func (p *Parser) parseBlockStatement() *ast.BlockStatement {
-	bs := &ast.BlockStatement{Token: p.curToken}
-	s := []ast.Statement{}
-	if !p.curTokenIs(token.LBRACE) {
-		return nil
-	}
-	p.nextToken()
-	for p.curToken.Type != token.RBRACE {
-		stmt := p.parseStatement()
-		if stmt != nil {
-			s = append(s, stmt)
-		}
-		p.nextToken()
-	}
-	p.nextToken()
-	bs.Statements = s
-	return bs
 }
 
 func (p *Parser) parseYediMujiStatement() *ast.YediMujiStatement {
@@ -222,12 +224,14 @@ func (p *Parser) parseYediMujiStatement() *ast.YediMujiStatement {
 
 	stmt.Consequent = p.parseBlockStatement()
 
+	p.nextToken()
 	if !p.curTokenIs(token.NABHAE_CHIKNE) {
 		return stmt
 	}
 
 	p.nextToken()
 	stmt.Alternative = p.parseBlockStatement()
+	p.nextToken()
 
 	return stmt
 }
@@ -239,6 +243,10 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
+	}
+	if !p.curTokenIs(token.SEMICOLON) {
+		p.errors = append(p.errors, "expected semicolon at the end of expression statement")
+		return nil
 	}
 
 	return stmt
@@ -361,17 +369,20 @@ func (p *Parser) parseKaamGarMuji() ast.Expression {
 	if !p.curTokenIs(token.LPAREN) {
 		return nil
 	}
-	if p.peekTokenIs(token.RPAREN) {
+	p.nextToken()
+	if p.curTokenIs(token.RPAREN) {
 		result.Arguments = nil
-		p.nextToken()
 	} else {
-		p.nextToken()
 		for {
 			currentArg := p.parseIdentifier()
 			result.Arguments = append(result.Arguments, &currentArg)
 			p.nextToken()
 			if p.curTokenIs(token.RPAREN) {
 				break
+			}
+			if !p.curTokenIs(token.COMMA) {
+				p.errors = append(p.errors, "expected comma after argument")
+				return nil
 			}
 			p.nextToken()
 		}

@@ -33,7 +33,7 @@ func TestNextToken(t *testing.T) {
 		expectedLiteral string
 	}{
 		{token.THOOS_MUJI, "thoos_muji"},
-		{token.IDFIER, "5️⃣"},
+		{token.IDFIER, "界"},
 		{token.ASSIGN, "="},
 		{token.INT, "5"},
 		{token.SEMICOLON, ";"},

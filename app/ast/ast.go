@@ -119,10 +119,12 @@ type ExpressionStatement struct {
 func (es *ExpressionStatement) statementNode()       {}
 func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
 func (es *ExpressionStatement) String() string {
+	var out bytes.Buffer
 	if es.Expression != nil {
-		return es.Expression.String()
+		out.WriteString(es.Expression.String())
 	}
-	return ""
+	out.WriteString(";")
+	return out.String()
 }
 
 type PrefixExpression struct {
@@ -188,9 +190,10 @@ func (y *BlockStatement) String() string {
 
 	out.WriteString("{\n")
 	for _, s := range y.Statements {
+		out.WriteString("\t")
 		out.WriteString(s.String())
 	}
-	out.WriteString("\n} ")
+	out.WriteString("\n}")
 
 	return out.String()
 }
