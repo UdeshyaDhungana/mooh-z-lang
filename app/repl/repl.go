@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/udeshyadhungana/interprerer/app/eval"
 	"github.com/udeshyadhungana/interprerer/app/lexer"
 	"github.com/udeshyadhungana/interprerer/app/parser"
 )
@@ -30,8 +31,11 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		evaluated := eval.Eval(program)
+		if evaluated != nil {
+			io.WriteString(out, evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
 	}
 }
 
