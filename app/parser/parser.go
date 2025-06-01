@@ -61,6 +61,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.SACHO_MUJI, p.parseBoolean)
 	p.registerPrefix(token.KAAM_GAR_MUJI, p.parseKaamGarMuji)
 	p.registerPrefix(token.LPAREN, p.parseLeftParenthesis)
+	p.registerPrefix(token.YEDI_MUJI, p.parseYediMujiExpression)
 
 	// infix functions for operators
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -140,7 +141,7 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		return nil
 	}
 	p.nextToken()
-	for p.curToken.Type != token.RBRACE {
+	for p.curToken.Type != token.RBRACE && p.curToken.Type != token.EOF {
 		stmt := p.parseStatement()
 		s = append(s, stmt)
 		p.nextToken()
@@ -155,8 +156,6 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseThoosMujiStatement()
 	case token.PATHA_MUJI:
 		return p.parsePathaMujiStatement()
-	case token.YEDI_MUJI:
-		return p.parseYediMujiStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -204,8 +203,8 @@ func (p *Parser) parsePathaMujiStatement() *ast.PathaMujiStatement {
 	return stmt
 }
 
-func (p *Parser) parseYediMujiStatement() *ast.YediMujiStatement {
-	stmt := &ast.YediMujiStatement{Token: p.curToken}
+func (p *Parser) parseYediMujiExpression() ast.Expression {
+	stmt := &ast.YediMujiExpression{Token: p.curToken}
 	if !p.curTokenIs(token.YEDI_MUJI) {
 		return nil
 	}
@@ -231,7 +230,6 @@ func (p *Parser) parseYediMujiStatement() *ast.YediMujiStatement {
 
 	p.nextToken()
 	stmt.Alternative = p.parseBlockStatement()
-	p.nextToken()
 
 	return stmt
 }
@@ -244,11 +242,6 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
-	if !p.curTokenIs(token.SEMICOLON) {
-		p.errors = append(p.errors, "expected semicolon at the end of expression statement")
-		return nil
-	}
-
 	return stmt
 }
 
@@ -375,7 +368,11 @@ func (p *Parser) parseKaamGarMuji() ast.Expression {
 	} else {
 		for {
 			currentArg := p.parseIdentifier()
-			result.Arguments = append(result.Arguments, &currentArg)
+			r, ok := currentArg.(*ast.Identifier)
+			if !ok {
+				p.errors = append(p.errors, "parameters must be identifiers")
+			}
+			result.Arguments = append(result.Arguments, r)
 			p.nextToken()
 			if p.curTokenIs(token.RPAREN) {
 				break

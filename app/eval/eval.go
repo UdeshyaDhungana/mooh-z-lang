@@ -1,16 +1,27 @@
 package eval
 
 import (
+	"fmt"
+
 	"github.com/udeshyadhungana/interprerer/app/ast"
 	"github.com/udeshyadhungana/interprerer/app/object"
+	"github.com/udeshyadhungana/interprerer/app/utils"
 )
 
-func Eval(node ast.Node) object.Object {
+func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node.Statements)
+		return evalProgram(node, env)
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(node.Expression, env)
+	case *ast.YediMujiExpression:
+		return evalYediMujiStatement(node.Condition, node.Consequent, node.Alternative, env)
+	case *ast.PathaMujiStatement:
+		return evalPathaMujiStatement(node.Value, env)
+	case *ast.ThoosMujiStatement:
+		return evalThoosMujiStatement(node.Name, node.Value, env)
+	case *ast.BlockStatement:
+		return evalStatements(node.Statements, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
 	case *ast.Boolean:
@@ -18,24 +29,50 @@ func Eval(node ast.Node) object.Object {
 			return object.TRUE
 		}
 		return object.FALSE
+	case *ast.Identifier:
+		return evalIdentifier(node, env)
+	case *ast.KaamGarMujiExpression:
+		return evalKaamGarMujiExpression(node, env)
+	case *ast.CallExpression:
+		return evalCallExpression(node, env)
 	case *ast.PrefixExpression:
-		right := Eval(node.Right)
+		right := Eval(node.Right, env)
 		return evalPrefixExpression(node.Operator, right)
 	case *ast.InfixExpression:
-		left := Eval(node.Left)
-		right := Eval(node.Right)
+		left := Eval(node.Left, env)
+		right := Eval(node.Right, env)
 		return evalInfixExpression(left, node.Operator, right)
-	case *ast.YediMujiStatement:
-		return evalYediMujiStatement(node.Condition, node.Consequent, node.Alternative)
 	}
 	return nil
 }
 
-func evalStatements(stmts []ast.Statement) object.Object {
+func evalProgram(program *ast.Program, env *object.Environment) object.Object {
+	var result object.Object
+
+	for _, statment := range program.Statements {
+		result = Eval(statment, env)
+		switch result := result.(type) {
+		case *object.Return:
+			return result.Value
+		case *object.Error:
+			return result
+		}
+	}
+	return result
+}
+
+func evalStatements(stmts []ast.Statement, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range stmts {
-		result = Eval(statement)
+		result = Eval(statement, env)
+
+		if result != nil {
+			rt := result.Type()
+			if rt == object.PATHA_MUJI_OBJ || rt == object.GALAT_MUJI_OBJ {
+				return result
+			}
+		}
 	}
 	return result
 }
@@ -47,7 +84,7 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 	case "-":
 		return evalMinusPrefixOperatorExpression(right)
 	default:
-		return object.NULL
+		return newError("unknown operator: %s%s", operator, right.Type())
 	}
 }
 
@@ -66,7 +103,7 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 
 func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 	if right.Type() != object.INTEGER_OBJ {
-		return object.NULL
+		return newError("unknown operator: -%s", right.Type())
 	}
 	value := right.(*object.Integer)
 	return &object.Integer{Value: -value.Value}
@@ -74,7 +111,7 @@ func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 
 func evalInfixExpression(left object.Object, operator string, right object.Object) object.Object {
 	if left.Type() != right.Type() {
-		return object.NULL
+		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
 	}
 	if left.Type() == object.INTEGER_OBJ {
 		return evalForInteger(left, operator, right)
@@ -82,7 +119,7 @@ func evalInfixExpression(left object.Object, operator string, right object.Objec
 	if left.Type() == object.BOOLEAN_OBJ {
 		return evalForBoolean(left, operator, right)
 	}
-	return object.NULL
+	return newError("type unsupported: %s %s %s", left.Type(), operator, right.Type())
 }
 
 func evalForInteger(left object.Object, operator string, right object.Object) object.Object {
@@ -98,15 +135,15 @@ func evalForInteger(left object.Object, operator string, right object.Object) ob
 	case "/":
 		return &object.Integer{Value: l.Value / r.Value}
 	case ">":
-		return getBoolRef(l.Value > r.Value)
+		return utils.GetBoolRef(l.Value > r.Value)
 	case "<":
-		return getBoolRef(l.Value < r.Value)
+		return utils.GetBoolRef(l.Value < r.Value)
 	case "==":
-		return getBoolRef(l.Value == r.Value)
+		return utils.GetBoolRef(l.Value == r.Value)
 	case "!=":
-		return getBoolRef(l.Value != r.Value)
+		return utils.GetBoolRef(l.Value != r.Value)
 	}
-	return object.NULL
+	return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 }
 
 func evalForBoolean(left object.Object, operator string, right object.Object) object.Object {
@@ -114,26 +151,29 @@ func evalForBoolean(left object.Object, operator string, right object.Object) ob
 	r := right.(*object.Boolean)
 	switch operator {
 	case "==":
-		return getBoolRef(l.Value == r.Value)
+		return utils.GetBoolRef(l.Value == r.Value)
 	case "!=":
-		return getBoolRef(l.Value != r.Value)
+		return utils.GetBoolRef(l.Value != r.Value)
 	}
-	return object.NULL
+	return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 }
 
-func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative ast.Node) object.Object {
-	cc := Eval(condition)
+func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative ast.Node, env *object.Environment) object.Object {
+	cc := Eval(condition, env)
 	if cc == nil {
 		return nil
 	}
+	if isError(cc) {
+		return cc
+	}
 
-	if isTruthy(cc) {
+	if utils.IsTruthy(cc) {
 		b, ok := consequent.(*ast.BlockStatement)
 		if !ok {
 			// maybe we will support non block statements in the future
 			return nil
 		}
-		return evalStatements(b.Statements)
+		return evalStatements(b.Statements, env)
 	} else {
 		b, ok := alternative.(*ast.BlockStatement)
 		if !ok {
@@ -142,26 +182,91 @@ func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative 
 		if b == nil {
 			return object.NULL
 		}
-		return evalStatements(b.Statements)
+		return evalStatements(b.Statements, env)
 	}
 }
 
-func isTruthy(o object.Object) bool {
-	switch o {
-	case object.TRUE:
-		return true
-	case object.FALSE:
-		return false
-	case object.NULL:
-		return false
-	default:
-		return true
+func evalPathaMujiStatement(value ast.Node, env *object.Environment) object.Object {
+	val := Eval(value, env)
+	if isError(val) {
+		return val
+	}
+	return &object.Return{
+		Value: Eval(value, env),
 	}
 }
 
-func getBoolRef(x bool) *object.Boolean {
-	if x {
-		return object.TRUE
+func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
+	val, ok := env.Get(node.Value)
+	if !ok {
+		return newError("identifier not found: %s", node.Value)
 	}
-	return object.FALSE
+	return val
+}
+
+func evalThoosMujiStatement(name *ast.Identifier, value ast.Expression, env *object.Environment) object.Object {
+	if name != nil {
+		v := Eval(value, env)
+		if v.Type() == object.GALAT_MUJI_OBJ {
+			return v
+		}
+		return env.Set(name.Value, v)
+	}
+	return newError("identifier is nil")
+}
+
+func evalKaamGarMujiExpression(node *ast.KaamGarMujiExpression, env *object.Environment) object.Object {
+	var result object.KaamGar
+	result.Body = node.Body
+	result.Env = env
+	result.Parameters = node.Arguments
+	return &result
+}
+
+func evalCallExpression(node *ast.CallExpression, env *object.Environment) object.Object {
+	fn, ok := env.Get(node.Function.TokenLiteral())
+	if !ok || fn.Type() != object.KAAM_GAR_MUJI_OBJ {
+		return newError("identifier not found: %s", node.Function.TokenLiteral())
+	}
+	f := fn.(*object.KaamGar)
+	if !ok {
+		return newError("cannot apply %s; not a function", node.Function.TokenLiteral())
+	}
+	// compare the number of arguments and parameters
+	return Apply(f, node, env)
+}
+
+func Apply(f *object.KaamGar, callExp *ast.CallExpression, env *object.Environment) object.Object {
+
+	if len(f.Parameters) != len(callExp.Arguments) {
+		return newError("arguments length mismatch for %s", callExp.TokenLiteral())
+	}
+
+	// extend environment
+	f.Env = object.NewEnclosedEnvironment(env)
+
+	for i, v := range f.Parameters {
+		evaluatedArg := Eval(callExp.Arguments[i], env)
+		if isError(evaluatedArg) {
+			return evaluatedArg
+		}
+		f.Env.Set(v.Value, evaluatedArg)
+	}
+	res := Eval(f.Body, f.Env)
+	if returnValue, ok := res.(*object.Return); ok {
+		return returnValue.Value
+	}
+	return res
+}
+
+/* Utils */
+func newError(format string, a ...any) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(format, a...)}
+}
+
+func isError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.GALAT_MUJI_OBJ
+	}
+	return false
 }

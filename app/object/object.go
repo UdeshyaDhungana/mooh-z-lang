@@ -1,15 +1,22 @@
 package object
 
 import (
+	"bytes"
 	"fmt"
+	"strings"
+
+	"github.com/udeshyadhungana/interprerer/app/ast"
 )
 
 type ObjectType string
 
 const (
-	INTEGER_OBJ ObjectType = "INTEGER"
-	BOOLEAN_OBJ ObjectType = "BOOLEAN"
-	NULL_OBJ    ObjectType = "NULL"
+	INTEGER_OBJ       ObjectType = "INTEGER"
+	BOOLEAN_OBJ       ObjectType = "BOOLEAN"
+	NULL_OBJ          ObjectType = "NULL"
+	PATHA_MUJI_OBJ    ObjectType = "RETURN"
+	GALAT_MUJI_OBJ    ObjectType = "ERROR"
+	KAAM_GAR_MUJI_OBJ ObjectType = "KAAM_GAR"
 )
 
 var (
@@ -56,3 +63,42 @@ type Null struct{}
 
 func (n *Null) Type() ObjectType { return NULL_OBJ }
 func (n *Null) Inspect() string  { return "khali_muji" }
+
+// Return Object to signify the end of statements execution
+type Return struct {
+	Value Object
+}
+
+func (r *Return) Type() ObjectType { return PATHA_MUJI_OBJ }
+func (r *Return) Inspect() string  { return r.Value.Inspect() }
+
+// Error handling
+type Error struct {
+	Message string
+}
+
+func (e *Error) Type() ObjectType { return GALAT_MUJI_OBJ }
+func (e *Error) Inspect() string  { return "ERROR: " + e.Message }
+
+// Kaam gar
+type KaamGar struct {
+	Parameters []*ast.Identifier
+	Body       *ast.BlockStatement
+	Env        *Environment
+}
+
+func (f *KaamGar) Type() ObjectType { return KAAM_GAR_MUJI_OBJ }
+func (f *KaamGar) Inspect() string {
+	var out bytes.Buffer
+	params := []string{}
+	for _, p := range f.Parameters {
+		params = append(params, p.String())
+	}
+	out.WriteString("fn")
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") {\n")
+	out.WriteString(f.Body.String())
+	out.WriteString("\n}")
+	return out.String()
+}

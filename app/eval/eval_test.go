@@ -13,13 +13,14 @@ func testEval(input string) object.Object {
 	l := lexer.NewLexer(input)
 	p := parser.NewParser(l)
 	program := p.ParseProgram()
+	env := object.NewEnvironment()
 	if len(p.Errors()) != 0 {
 		for _, e := range p.Errors() {
 			fmt.Println(e)
 		}
 		return nil
 	}
-	return Eval(program)
+	return Eval(program, env)
 }
 
 func TestEvalIntegerStatement(t *testing.T) {
@@ -127,7 +128,7 @@ func TestBangOperator(t *testing.T) {
 	}
 }
 
-func TestIfElseExpressions(t *testing.T) {
+func TestYediMujiExpressions(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected interface{}
@@ -159,4 +160,153 @@ func testNullObject(t *testing.T, obj object.Object) bool {
 		return false
 	}
 	return false
+}
+
+func TestPathaMujiStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected any
+	}{
+		{"patha_muji 10;", 10},
+		{"patha_muji 233;", 233},
+		{"yedi_muji(10 > 1) { patha_muji 1; } nabhae_chikne { patha_muji 0; }", 1},
+		{"yedi_muji(10 < 1) { patha_muji 1; } nabhae_chikne { patha_muji 0; }", 0},
+		{`
+		yedi_muji (10 > 1) {
+			yedi_muji (10 > 1) {
+				patha_muji 1;
+			}
+			patha_muji 2;
+		}
+		`, 1},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		integer, ok := tt.expected.(int)
+
+		if ok {
+			testIntegerObject(t, evaluated, int64(integer))
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
+func TestErrorHandling(t *testing.T) {
+	tests := []struct {
+		input           string
+		expectedMessage string
+	}{
+		{
+			"5 + sacho_muji;",
+			"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"5 + jhut_muji; 5;",
+			"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"-sacho_muji;",
+			"unknown operator: -BOOLEAN",
+		},
+		{
+			"sacho_muji + jhut_muji;",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"5; sacho_muji + jhut_muji; 5;",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"yedi_muji (10 > 1) { sacho_muji + jhut_muji; }",
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			`yedi_muji (10 > 1) {
+				yedi_muji (20 > 1) {
+					patha_muji sacho_muji + jhut_muji;
+				}
+				patha_muji 1;
+			}`,
+			"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"foobar;",
+			"identifier not found: foobar",
+		},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		errObj, ok := evaluated.(*object.Error)
+		if !ok {
+			t.Errorf("no error object returned. got=%T(%+v)",
+				evaluated, evaluated)
+			continue
+		}
+		if errObj.Message != tt.expectedMessage {
+			t.Errorf("wrong error message. expected=%q, got=%q",
+				tt.expectedMessage, errObj.Message)
+		}
+
+	}
+}
+
+/* TestThoosMuji */
+func TestThoosMujiStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"thoos_muji a = 5; a;", 5},
+		{"thoos_muji a = 5 * 5; a;", 25},
+		{"thoos_muji a = 5; thoos_muji b = a; b;", 5},
+		{"thoos_muji a = 5; thoos_muji b = a; thoos_muji c = a + b + 5; c;", 15},
+	}
+
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
+// func TestFunctionApplication(t *testing.T) {
+// 	tests := []struct {
+// 		input    string
+// 		expected int64
+// 	}{
+// 		{"thoos_muji identity = kaam_gar_muji(x) { x; }; identity(5);", 5},
+// 		{"thoos_muji identity = kaam_gar_muji(x) { patha_muji x; }; identity(5);", 5},
+// 		{"thoos_muji double = kaam_gar_muji(x) { x * 2; }; double(5);", 10},
+// 		{"thoos_muji add = kaam_gar_muji(x, y) { x + y; }; add(5, 5);", 10},
+// 		{"thoos_muji add = kaam_gar_muji(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+// 		{"kaam_gar_muji(x) { x; }(5)", 5},
+// 	}
+// 	for _, tt := range tests {
+// 		testIntegerObject(t, testEval(tt.input), tt.expected)
+// 	}
+// }
+
+func TestRecursion(t *testing.T) {
+	tests := []struct {
+		program  string
+		expected int64
+	}{
+		{`
+		thoos_muji recursion = kaam_gar_muji(x) {
+			yedi_muji (x == 0) {
+				patha_muji 1;
+			} nabhae_chikne {
+			 	patha_muji x * recursion(x - 1);
+			}
+		};
+		recursion(4);
+		`,
+			24},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.program)
+		testIntegerObject(t, evaluated, tt.expected)
+	}
 }

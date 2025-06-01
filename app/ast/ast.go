@@ -198,17 +198,17 @@ func (y *BlockStatement) String() string {
 	return out.String()
 }
 
-// YEDI MUJI Satement
-type YediMujiStatement struct {
+// YEDI MUJI expression
+type YediMujiExpression struct {
 	Token       token.Token
 	Condition   Expression
 	Consequent  *BlockStatement
 	Alternative *BlockStatement
 }
 
-func (y *YediMujiStatement) statementNode()       {}
-func (y *YediMujiStatement) TokenLiteral() string { return y.Token.Literal }
-func (y *YediMujiStatement) String() string {
+func (y *YediMujiExpression) expressionNode()      {}
+func (y *YediMujiExpression) TokenLiteral() string { return y.Token.Literal }
+func (y *YediMujiExpression) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("yedi_muji (")
@@ -227,7 +227,7 @@ func (y *YediMujiStatement) String() string {
 // kaam_gar
 type KaamGarMujiExpression struct {
 	Token     token.Token
-	Arguments []*Expression
+	Arguments []*Identifier
 	Body      *BlockStatement
 }
 
