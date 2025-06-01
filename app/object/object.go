@@ -18,6 +18,7 @@ const (
 	GALAT_MUJI_OBJ    ObjectType = "ERROR"
 	KAAM_GAR_MUJI_OBJ ObjectType = "KAAM_GAR"
 	STRING            ObjectType = "STRING"
+	BUILTIN_OBJECT    ObjectType = "BUILTIN"
 )
 
 var (
@@ -99,7 +100,7 @@ func (f *KaamGar) Inspect() string {
 	out.WriteString("(")
 	out.WriteString(strings.Join(params, ", "))
 	out.WriteString(") {\n")
-	out.WriteString(f.Body.String())
+	out.WriteString("...")
 	out.WriteString("\n}")
 	return out.String()
 }
@@ -116,3 +117,13 @@ func (s *String) Inspect() string {
 func (s *String) Type() ObjectType {
 	return STRING
 }
+
+// builtin
+type BuiltinFunction func(args ...Object) Object
+
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func (b *Builtin) Type() ObjectType { return BUILTIN_OBJECT }
+func (b *Builtin) Inspect() string  { return "builitn function" }

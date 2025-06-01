@@ -212,11 +212,13 @@ func evalPathaMujiStatement(value ast.Node, env *object.Environment) object.Obje
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
-	val, ok := env.Get(node.Value)
-	if !ok {
-		return newError("identifier not found: %s", node.Value)
+	if val, ok := env.Get(node.Value); ok {
+		return val
 	}
-	return val
+	if builtin, ok := builtins[node.Value]; ok {
+		return builtin
+	}
+	return newError("identifier not found: %s", node.Value)
 }
 
 func evalThoosMujiStatement(name *ast.Identifier, value ast.Expression, env *object.Environment) object.Object {
@@ -239,41 +241,61 @@ func evalKaamGarMujiExpression(node *ast.KaamGarMujiExpression, env *object.Envi
 }
 
 func evalCallExpression(node *ast.CallExpression, env *object.Environment) object.Object {
-	var fn object.Object
-	fn, ok := env.Get(node.Function.TokenLiteral())
-	if !ok {
-		kgr, ok := node.Function.(*ast.KaamGarMujiExpression)
-		if !ok {
-			return newError("cannot apply expression: %s", node.Function.String())
+	// evaluate arguments
+	var evaluatedArgs []*object.Object
+	for _, v := range node.Arguments {
+		e := Eval(v, env)
+		if isError(e) {
+			return e
 		}
-		fn = evalKaamGarMujiExpression(kgr, env)
-	} else {
-		if fn.Type() != object.KAAM_GAR_MUJI_OBJ {
-			return newError("identifier not found: %s", node.Function.TokenLiteral())
-		}
-	}
-	f, ok := fn.(*object.KaamGar)
-	if !ok {
-		return newError("cannot apply %s; not a function", node.Function.TokenLiteral())
+		evaluatedArgs = append(evaluatedArgs, &e)
 	}
 
-	if len(f.Parameters) != len(node.Arguments) {
-		return newError("arguments length mismatch for %s", node.TokenLiteral())
-	}
-	f.Env = object.NewEnclosedEnvironment(f.Env)
-	for i, v := range f.Parameters {
-		evaluatedArg := Eval(node.Arguments[i], env)
-		if isError(evaluatedArg) {
-			return evaluatedArg
+	fn := evalIdentifier(&ast.Identifier{Value: node.Function.TokenLiteral()}, env)
+	switch fn.Type() {
+	case object.GALAT_MUJI_OBJ:
+		// might be a function expression itself
+		if kgr, ok := node.Function.(*ast.KaamGarMujiExpression); ok {
+			fn = evalKaamGarMujiExpression(kgr, env)
 		}
-		f.Env.Set(v.Value, evaluatedArg)
+	case object.BUILTIN_OBJECT:
+		f := fn.(*object.Builtin)
+		return evalBuiltin(f, evaluatedArgs)
 	}
-	result := Apply(f, node)
-	f.Env = f.Env.PopStack()
-	return result
+
+	if f, ok := fn.(*object.KaamGar); ok {
+		return evalUserDefinedCall(f, evaluatedArgs)
+	}
+	return newError("cannot apply %s; not a function or a builtin", node.Function.TokenLiteral())
+
 }
 
-func Apply(f *object.KaamGar, callExp *ast.CallExpression) object.Object {
+func evalBuiltin(b *object.Builtin, args []*object.Object) object.Object {
+	converted := make([]object.Object, len(args))
+	for i, v := range args {
+		converted[i] = *v
+	}
+	return b.Fn(converted...)
+}
+
+func evalUserDefinedCall(f *object.KaamGar, args []*object.Object) object.Object {
+	// check parameters
+	if len(f.Parameters) != len(args) {
+		return newError("arguments length mismatch")
+	}
+
+	// set it for function's environment
+	f.Env = object.NewEnclosedEnvironment(f.Env)
+	for i, v := range f.Parameters {
+		f.Env.Set(v.Value, *args[i])
+	}
+	result := Apply(f)
+	f.Env = f.Env.PopStack()
+	return result
+
+}
+
+func Apply(f *object.KaamGar) object.Object {
 	res := Eval(f.Body, f.Env)
 
 	if returnValue, ok := res.(*object.Return); ok {
