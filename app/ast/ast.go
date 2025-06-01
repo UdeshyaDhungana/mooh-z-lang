@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/udeshyadhungana/interprerer/app/token"
@@ -275,4 +276,15 @@ func (f *CallExpression) String() string {
 	out.WriteString(")")
 
 	return out.String()
+}
+
+type StringExpression struct {
+	Token token.Token
+	Value string
+}
+
+func (s *StringExpression) expressionNode()      {}
+func (s *StringExpression) TokenLiteral() string { return s.Token.Literal }
+func (s *StringExpression) String() string {
+	return fmt.Sprintf("\"%s\"", s.Value)
 }

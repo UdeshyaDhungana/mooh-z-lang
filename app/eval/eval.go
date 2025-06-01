@@ -24,6 +24,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalStatements(node.Statements, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+	case *ast.StringExpression:
+		return &object.String{Value: node.Value}
 	case *ast.Boolean:
 		if node.Value {
 			return object.TRUE
@@ -119,6 +121,9 @@ func evalInfixExpression(left object.Object, operator string, right object.Objec
 	if left.Type() == object.BOOLEAN_OBJ {
 		return evalForBoolean(left, operator, right)
 	}
+	if left.Type() == object.STRING {
+		return evalForString(left, operator, right)
+	}
 	return newError("type unsupported: %s %s %s", left.Type(), operator, right.Type())
 }
 
@@ -156,6 +161,16 @@ func evalForBoolean(left object.Object, operator string, right object.Object) ob
 		return utils.GetBoolRef(l.Value != r.Value)
 	}
 	return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+}
+
+func evalForString(left object.Object, operator string, right object.Object) object.Object {
+	l := left.(*object.String)
+	r := right.(*object.String)
+	switch operator {
+	case "+":
+		return &object.String{Value: l.Value + r.Value}
+	}
+	return newError("unkown operator: %s %s %s", l.Type(), operator, r.Type())
 }
 
 func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative ast.Node, env *object.Environment) object.Object {
@@ -224,35 +239,43 @@ func evalKaamGarMujiExpression(node *ast.KaamGarMujiExpression, env *object.Envi
 }
 
 func evalCallExpression(node *ast.CallExpression, env *object.Environment) object.Object {
+	var fn object.Object
 	fn, ok := env.Get(node.Function.TokenLiteral())
-	if !ok || fn.Type() != object.KAAM_GAR_MUJI_OBJ {
-		return newError("identifier not found: %s", node.Function.TokenLiteral())
+	if !ok {
+		kgr, ok := node.Function.(*ast.KaamGarMujiExpression)
+		if !ok {
+			return newError("cannot apply expression: %s", node.Function.String())
+		}
+		fn = evalKaamGarMujiExpression(kgr, env)
+	} else {
+		if fn.Type() != object.KAAM_GAR_MUJI_OBJ {
+			return newError("identifier not found: %s", node.Function.TokenLiteral())
+		}
 	}
-	f := fn.(*object.KaamGar)
+	f, ok := fn.(*object.KaamGar)
 	if !ok {
 		return newError("cannot apply %s; not a function", node.Function.TokenLiteral())
 	}
-	// compare the number of arguments and parameters
-	return Apply(f, node, env)
-}
 
-func Apply(f *object.KaamGar, callExp *ast.CallExpression, env *object.Environment) object.Object {
-
-	if len(f.Parameters) != len(callExp.Arguments) {
-		return newError("arguments length mismatch for %s", callExp.TokenLiteral())
+	if len(f.Parameters) != len(node.Arguments) {
+		return newError("arguments length mismatch for %s", node.TokenLiteral())
 	}
-
-	// extend environment
-	f.Env = object.NewEnclosedEnvironment(env)
-
+	f.Env = object.NewEnclosedEnvironment(f.Env)
 	for i, v := range f.Parameters {
-		evaluatedArg := Eval(callExp.Arguments[i], env)
+		evaluatedArg := Eval(node.Arguments[i], env)
 		if isError(evaluatedArg) {
 			return evaluatedArg
 		}
 		f.Env.Set(v.Value, evaluatedArg)
 	}
+	result := Apply(f, node)
+	f.Env = f.Env.PopStack()
+	return result
+}
+
+func Apply(f *object.KaamGar, callExp *ast.CallExpression) object.Object {
 	res := Eval(f.Body, f.Env)
+
 	if returnValue, ok := res.(*object.Return); ok {
 		return returnValue.Value
 	}

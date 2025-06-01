@@ -38,6 +38,9 @@ const (
 	LBRACE = "{"
 	RBRACE = "}"
 
+	// string
+	STRING = "STRING"
+
 	// Language Keywords
 	THOOS_MUJI    = "THOOS_MUJI"
 	KAAM_GAR_MUJI = "KAAM_GAR_MUJI"

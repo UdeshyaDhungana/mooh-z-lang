@@ -88,7 +88,8 @@ func TestPathaMujiStatements(t *testing.T) {
 	input := `
 	patha_muji 2;
 	patha_muji a;
-	patha_muji x + y;`
+	patha_muji x + y;
+	patha_muji "mero string";`
 
 	l := lexer.NewLexer(input)
 	p := NewParser(l)
@@ -98,7 +99,7 @@ func TestPathaMujiStatements(t *testing.T) {
 	if program == nil {
 		t.Fatalf("ParseProgram() returned nil")
 	}
-	if len(program.Statements) != 3 {
+	if len(program.Statements) != 4 {
 		t.Fatalf("program.Statements does not contain 3 statements. got=%d", len(program.Statements))
 	}
 
@@ -523,6 +524,29 @@ func TestKaamGarMujiStatement(t *testing.T) {
 
 		for i, ident := range tt.expectedParams {
 			testLiteral(t, f.Arguments[i], ident)
+		}
+	}
+}
+
+func TestString(t *testing.T) {
+	tests := []struct {
+		statement string
+		expected  string
+	}{
+		{
+			`"foobar"`,
+			"foobar",
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.statement)
+		p := NewParser(l)
+
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+		if len(program.Statements) != 1 {
+			t.Fatalf("expected 1 statement. got %d", len(program.Statements))
 		}
 	}
 }

@@ -30,3 +30,7 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env.outer = outer
 	return env
 }
+
+func (e *Environment) PopStack() *Environment {
+	return e.outer
+}

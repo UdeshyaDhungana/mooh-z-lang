@@ -270,22 +270,22 @@ func TestThoosMujiStatements(t *testing.T) {
 	}
 }
 
-// func TestFunctionApplication(t *testing.T) {
-// 	tests := []struct {
-// 		input    string
-// 		expected int64
-// 	}{
-// 		{"thoos_muji identity = kaam_gar_muji(x) { x; }; identity(5);", 5},
-// 		{"thoos_muji identity = kaam_gar_muji(x) { patha_muji x; }; identity(5);", 5},
-// 		{"thoos_muji double = kaam_gar_muji(x) { x * 2; }; double(5);", 10},
-// 		{"thoos_muji add = kaam_gar_muji(x, y) { x + y; }; add(5, 5);", 10},
-// 		{"thoos_muji add = kaam_gar_muji(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
-// 		{"kaam_gar_muji(x) { x; }(5)", 5},
-// 	}
-// 	for _, tt := range tests {
-// 		testIntegerObject(t, testEval(tt.input), tt.expected)
-// 	}
-// }
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"thoos_muji identity = kaam_gar_muji(x) { x; }; identity(5);", 5},
+		{"thoos_muji identity = kaam_gar_muji(x) { patha_muji x; }; identity(5);", 5},
+		{"thoos_muji double = kaam_gar_muji(x) { x * 2; }; double(5);", 10},
+		{"thoos_muji add = kaam_gar_muji(x, y) { x + y; }; add(5, 5);", 10},
+		{"thoos_muji add = kaam_gar_muji(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"kaam_gar_muji(x) { x; }(5)", 5},
+	}
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
 
 func TestRecursion(t *testing.T) {
 	tests := []struct {
@@ -308,5 +308,22 @@ func TestRecursion(t *testing.T) {
 	for _, tt := range tests {
 		evaluated := testEval(tt.program)
 		testIntegerObject(t, evaluated, tt.expected)
+	}
+}
+
+func TestCustom(t *testing.T) {
+	program := `
+	thoos_muji makeGreeter = kaam_gar_muji(greeting) {
+		patha_muji kaam_gar_muji(name) {
+			patha_muji greeting + " " + name + "!";
+		};
+	};
+	thoos_muji hello = makeGreeter("Hello");
+	hello("Udeshya");
+	`
+
+	evaluated := testEval(program)
+	if evaluated.Inspect() != "Hello Udeshya!" {
+		t.Fatalf("test failed")
 	}
 }

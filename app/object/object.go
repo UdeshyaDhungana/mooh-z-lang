@@ -17,6 +17,7 @@ const (
 	PATHA_MUJI_OBJ    ObjectType = "RETURN"
 	GALAT_MUJI_OBJ    ObjectType = "ERROR"
 	KAAM_GAR_MUJI_OBJ ObjectType = "KAAM_GAR"
+	STRING            ObjectType = "STRING"
 )
 
 var (
@@ -101,4 +102,17 @@ func (f *KaamGar) Inspect() string {
 	out.WriteString(f.Body.String())
 	out.WriteString("\n}")
 	return out.String()
+}
+
+// string
+type String struct {
+	Value string
+}
+
+func (s *String) Inspect() string {
+	return s.Value
+}
+
+func (s *String) Type() ObjectType {
+	return STRING
 }

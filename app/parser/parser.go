@@ -62,6 +62,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.KAAM_GAR_MUJI, p.parseKaamGarMuji)
 	p.registerPrefix(token.LPAREN, p.parseLeftParenthesis)
 	p.registerPrefix(token.YEDI_MUJI, p.parseYediMujiExpression)
+	p.registerPrefix(token.STRING, p.parseStringExpression)
 
 	// infix functions for operators
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -387,6 +388,10 @@ func (p *Parser) parseKaamGarMuji() ast.Expression {
 	p.nextToken()
 	result.Body = p.parseBlockStatement()
 	return &result
+}
+
+func (p *Parser) parseStringExpression() ast.Expression {
+	return &ast.StringExpression{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 func (p *Parser) peekPrecedence() int {
