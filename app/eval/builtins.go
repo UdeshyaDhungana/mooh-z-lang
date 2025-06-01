@@ -3,7 +3,7 @@ package eval
 import "github.com/udeshyadhungana/interprerer/app/object"
 
 var builtins = map[string]*object.Builtin{
-	"len": &object.Builtin{
+	"len": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
