@@ -326,3 +326,22 @@ func (a *ArrayIndexExpression) String() string {
 	out.WriteString("]")
 	return out.String()
 }
+
+type JabasammaMujiExpression struct {
+	Token      token.Token
+	Condition  Expression
+	Consequent *BlockStatement
+}
+
+func (c *JabasammaMujiExpression) expressionNode() {}
+func (c *JabasammaMujiExpression) TokenLiteral() string {
+	return c.Token.Literal
+}
+func (c *JabasammaMujiExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("jaba_samma_muji (")
+	out.WriteString(c.Condition.String())
+	out.WriteString(")")
+	out.WriteString(c.Consequent.String())
+	return out.String()
+}

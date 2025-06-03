@@ -324,23 +324,6 @@ func TestRecursion(t *testing.T) {
 	}
 }
 
-func TestCustom(t *testing.T) {
-	program := `
-	thoos_muji makeGreeter = kaam_gar_muji(greeting) {
-		patha_muji kaam_gar_muji(name) {
-			patha_muji greeting + " " + name + "!";
-		};
-	};
-	thoos_muji hello = makeGreeter("Hello");
-	hello("Udeshya");
-	`
-
-	evaluated := testEval(program)
-	if evaluated.Inspect() != "Hello Udeshya!" {
-		t.Fatalf("test failed")
-	}
-}
-
 func TestBuiltinFunctions(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -404,5 +387,52 @@ func TestArrayIndex(t *testing.T) {
 		case string:
 			testStringObject(t, evaluated, expected)
 		}
+	}
+}
+
+func TestJabasammaMujiExpressionEval(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{
+			`
+			thoos_muji i = 0;
+			thoos_muji sum = 0;
+			jaba_samma_muji(i < 10) {
+				thoos_muji sum = sum + i + 1;
+			}
+			`,
+			55,
+		},
+		// {
+		// 	``,
+		// 	100,
+		// },
+	}
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		if !testIntegerObject(t, evaluated, tt.expected) {
+			t.Fatalf("failed to test JabasammaMujiExpression")
+		}
+	}
+}
+
+// re-assignment
+
+func TestCustom(t *testing.T) {
+	program := `
+	thoos_muji makeGreeter = kaam_gar_muji(greeting) {
+		patha_muji kaam_gar_muji(name) {
+			patha_muji greeting + " " + name + "!";
+		};
+	};
+	thoos_muji hello = makeGreeter("Hello");
+	hello("Udeshya");
+	`
+
+	evaluated := testEval(program)
+	if evaluated.Inspect() != "Hello Udeshya!" {
+		t.Fatalf("test failed")
 	}
 }

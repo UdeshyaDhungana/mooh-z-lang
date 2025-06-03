@@ -65,6 +65,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.YEDI_MUJI, p.parseYediMujiExpression)
 	p.registerPrefix(token.STRING, p.parseStringExpression)
 	p.registerPrefix(token.LBRACKET, p.parseArrayExpression)
+	p.registerPrefix(token.JABA_SAMMA_MUJI, p.parseJabasammaMujiExpression)
 
 	// infix functions for operators
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -227,14 +228,34 @@ func (p *Parser) parseYediMujiExpression() ast.Expression {
 
 	stmt.Consequent = p.parseBlockStatement()
 
-	p.nextToken()
-	if !p.curTokenIs(token.NABHAE_CHIKNE) {
+	if !p.peekTokenIs(token.NABHAE_CHIKNE) {
 		return stmt
 	}
-
+	p.nextToken()
 	p.nextToken()
 	stmt.Alternative = p.parseBlockStatement()
 
+	return stmt
+}
+
+func (p *Parser) parseJabasammaMujiExpression() ast.Expression {
+	stmt := &ast.JabasammaMujiExpression{Token: p.curToken}
+	if !p.curTokenIs(token.JABA_SAMMA_MUJI) {
+		return nil
+	}
+	p.nextToken()
+	if !p.curTokenIs(token.LPAREN) {
+		return nil
+	}
+	// parse condition
+	p.nextToken()
+	stmt.Condition = p.parseExpression(LOWEST)
+	p.nextToken()
+	if !p.curTokenIs(token.RPAREN) && !p.peekTokenIs(token.LBRACE) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Consequent = p.parseBlockStatement()
 	return stmt
 }
 

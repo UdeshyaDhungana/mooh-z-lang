@@ -29,6 +29,10 @@ func TestNextToken(t *testing.T) {
 
 	"newstring"
 	[newarray, "newArray"]
+
+	jaba_samma_muji(sacho_muji) {
+		jhut_muji;
+	}
 	`
 
 	tests := []struct {
@@ -114,6 +118,14 @@ func TestNextToken(t *testing.T) {
 		{token.COMMA, ","},
 		{token.STRING, "newArray"},
 		{token.RBRACKET, "]"},
+		{token.JABA_SAMMA_MUJI, "jaba_samma_muji"},
+		{token.LPAREN, "("},
+		{token.SACHO_MUJI, "sacho_muji"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.JHUT_MUJI, "jhut_muji"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}
 	l := NewLexer(input)

@@ -55,6 +55,8 @@ const (
 
 	SACHO_MUJI = "SACHO_MUJI"
 	JHUT_MUJI  = "JHUT_MUJI"
+
+	JABA_SAMMA_MUJI = "JABA_SAMMA_MUJI"
 )
 
 func NewToken(t TokenType, r rune) Token {
@@ -66,13 +68,14 @@ func NewTokenFromStr(t TokenType, s string) Token {
 }
 
 var keywords = map[string]TokenType{
-	"thoos_muji":    THOOS_MUJI,
-	"kaam_gar_muji": KAAM_GAR_MUJI,
-	"yedi_muji":     YEDI_MUJI,
-	"nabhae_chikne": NABHAE_CHIKNE,
-	"sacho_muji":    SACHO_MUJI,
-	"jhut_muji":     JHUT_MUJI,
-	"patha_muji":    PATHA_MUJI,
+	"thoos_muji":      THOOS_MUJI,
+	"kaam_gar_muji":   KAAM_GAR_MUJI,
+	"yedi_muji":       YEDI_MUJI,
+	"nabhae_chikne":   NABHAE_CHIKNE,
+	"sacho_muji":      SACHO_MUJI,
+	"jhut_muji":       JHUT_MUJI,
+	"patha_muji":      PATHA_MUJI,
+	"jaba_samma_muji": JABA_SAMMA_MUJI,
 }
 
 // this distinguishes reserved keywords from variable names

@@ -634,6 +634,46 @@ func TestArrayIndex(t *testing.T) {
 	}
 }
 
+func TestJabasammaMujiExpressionParsing(t *testing.T) {
+	tests := []struct {
+		program  string
+		expected string
+	}{
+		{
+			`jaba_samma_muji (sacho_muji) {
+				1;
+			}
+			`,
+			"",
+		},
+		{
+			`jaba_samma_muji (jhut_muji) {
+				23;
+			}`,
+			"",
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.program)
+		p := NewParser(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
+		}
+		es, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+		_, ok = es.Expression.(*ast.JabasammaMujiExpression)
+		if !ok {
+			t.Fatalf("expressiion not an ast.JabasammaMujiExpression. got=%T", es.Expression)
+		}
+	}
+}
+
 func TestCustom(t *testing.T) {
 	tests := []struct {
 		statement string
