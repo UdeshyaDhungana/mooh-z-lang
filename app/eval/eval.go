@@ -313,11 +313,19 @@ func evalArrayExpression(a *ast.ArrayExpression, env *object.Environment) object
 }
 
 func evalArrayIndexExpression(a *ast.ArrayIndexExpression, env *object.Environment) object.Object {
-	idx, ok := Eval(a.Index, env).(*object.Integer)
+	idxEvaluated := Eval(a.Index, env)
+	if idxEvaluated.Type() == object.GALAT_MUJI_OBJ {
+		return idxEvaluated
+	}
+	idx, ok := idxEvaluated.(*object.Integer)
 	if !ok {
 		return newError("index is not an integer")
 	}
-	arr, ok := Eval(a.Array, env).(*object.Array)
+	arrEvaluated := Eval(a.Array, env)
+	if arrEvaluated.Type() == object.GALAT_MUJI_OBJ {
+		return arrEvaluated
+	}
+	arr, ok := arrEvaluated.(*object.Array)
 	if !ok {
 		return newError("cannot index a non array object: %s", arr.Inspect())
 	}

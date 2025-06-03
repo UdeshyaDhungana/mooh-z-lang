@@ -377,21 +377,21 @@ func TestArrayIndex(t *testing.T) {
 		input    string
 		expected any
 	}{
-		// {
-		// 	`thoos_muji x = [1,2,3];
-		// 	x[0]`,
-		// 	1,
-		// },
+		{
+			`thoos_muji x = [1,2,3];
+			x[0]`,
+			1,
+		},
 		{
 			`thoos_muji y = [sacho_muji, jhut_muji, jhut_muji];
-			x[2]`,
+			y[2]`,
 			false,
 		},
-		// {
-		// 	`thoos_muji y = [\"Udeshya\", \"Dhungana\"];
-		// 	x[0]`,
-		// 	"Udeshya",
-		// },
+		{
+			`thoos_muji y = ["Udeshya", "Dhungana"];
+			y[0]`,
+			"Udeshya",
+		},
 	}
 
 	for _, tt := range tests {
