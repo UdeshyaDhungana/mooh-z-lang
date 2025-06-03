@@ -288,3 +288,41 @@ func (s *StringExpression) TokenLiteral() string { return s.Token.Literal }
 func (s *StringExpression) String() string {
 	return fmt.Sprintf("\"%s\"", s.Value)
 }
+
+type ArrayExpression struct {
+	Token    token.Token
+	Length   int
+	Elements []Expression
+}
+
+func (a *ArrayExpression) expressionNode()      {}
+func (a *ArrayExpression) TokenLiteral() string { return a.Token.Literal }
+func (a *ArrayExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("[")
+	var eachString []string
+	for _, e := range a.Elements {
+		eachString = append(eachString, e.String())
+	}
+	out.WriteString(strings.Join(eachString, ", "))
+	out.WriteString("]")
+	return out.String()
+}
+
+type ArrayIndexExpression struct {
+	Token token.Token
+	Array Expression
+	Index Expression
+}
+
+func (a *ArrayIndexExpression) expressionNode()      {}
+func (a *ArrayIndexExpression) TokenLiteral() string { return a.Token.Literal }
+func (a *ArrayIndexExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString(a.Array.String())
+	out.WriteString("[")
+	out.WriteString(fmt.Sprintf("%d", a.Index))
+	out.WriteString("]")
+	return out.String()
+}

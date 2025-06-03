@@ -19,6 +19,7 @@ const (
 	KAAM_GAR_MUJI_OBJ ObjectType = "KAAM_GAR"
 	STRING            ObjectType = "STRING"
 	BUILTIN_OBJECT    ObjectType = "BUILTIN"
+	ARRAY_OBJECT      ObjectType = "ARRAY"
 )
 
 var (
@@ -127,3 +128,25 @@ type Builtin struct {
 
 func (b *Builtin) Type() ObjectType { return BUILTIN_OBJECT }
 func (b *Builtin) Inspect() string  { return "builitn function" }
+
+// array
+type Array struct {
+	Arr    []Object
+	Length int64
+}
+
+func (a *Array) Inspect() string {
+	var result bytes.Buffer
+	result.WriteString("[")
+	elems := []string{}
+	for _, e := range a.Arr {
+		elems = append(elems, e.Inspect())
+	}
+	result.WriteString(strings.Join(elems, ", "))
+	result.WriteString("]")
+	return result.String()
+}
+
+func (a *Array) Type() ObjectType {
+	return ARRAY_OBJECT
+}

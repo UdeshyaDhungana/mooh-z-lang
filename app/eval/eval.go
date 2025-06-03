@@ -26,6 +26,10 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return &object.Integer{Value: node.Value}
 	case *ast.StringExpression:
 		return &object.String{Value: node.Value}
+	case *ast.ArrayExpression:
+		return evalArrayExpression(node, env)
+	case *ast.ArrayIndexExpression:
+		return evalArrayIndexExpression(node, env)
 	case *ast.Boolean:
 		if node.Value {
 			return object.TRUE
@@ -257,6 +261,8 @@ func evalCallExpression(node *ast.CallExpression, env *object.Environment) objec
 		// might be a function expression itself
 		if kgr, ok := node.Function.(*ast.KaamGarMujiExpression); ok {
 			fn = evalKaamGarMujiExpression(kgr, env)
+		} else {
+			return newError("Cannot apply: %s", node.Function.String())
 		}
 	case object.BUILTIN_OBJECT:
 		f := fn.(*object.Builtin)
@@ -267,7 +273,6 @@ func evalCallExpression(node *ast.CallExpression, env *object.Environment) objec
 		return evalUserDefinedCall(f, evaluatedArgs)
 	}
 	return newError("cannot apply %s; not a function or a builtin", node.Function.TokenLiteral())
-
 }
 
 func evalBuiltin(b *object.Builtin, args []*object.Object) object.Object {
@@ -292,7 +297,34 @@ func evalUserDefinedCall(f *object.KaamGar, args []*object.Object) object.Object
 	result := Apply(f)
 	f.Env = f.Env.PopStack()
 	return result
+}
 
+func evalArrayExpression(a *ast.ArrayExpression, env *object.Environment) object.Object {
+	var result object.Array
+	for i := range a.Elements {
+		evaluated := Eval(a.Elements[i], env)
+		if evaluated.Type() == object.GALAT_MUJI_OBJ {
+			return evaluated
+		}
+		result.Arr = append(result.Arr, evaluated)
+		result.Length += 1
+	}
+	return &result
+}
+
+func evalArrayIndexExpression(a *ast.ArrayIndexExpression, env *object.Environment) object.Object {
+	idx, ok := Eval(a.Index, env).(*object.Integer)
+	if !ok {
+		return newError("index is not an integer")
+	}
+	arr, ok := Eval(a.Array, env).(*object.Array)
+	if !ok {
+		return newError("cannot index a non array object: %s", arr.Inspect())
+	}
+	if int(idx.Value) >= int(arr.Length) {
+		return newError("array out of bounds")
+	}
+	return arr.Arr[idx.Value]
 }
 
 func Apply(f *object.KaamGar) object.Object {

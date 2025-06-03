@@ -47,6 +47,7 @@ var precedences = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
+	token.LBRACKET: CALL,
 }
 
 func NewParser(l *lexer.Lexer) *Parser {
@@ -63,6 +64,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LPAREN, p.parseLeftParenthesis)
 	p.registerPrefix(token.YEDI_MUJI, p.parseYediMujiExpression)
 	p.registerPrefix(token.STRING, p.parseStringExpression)
+	p.registerPrefix(token.LBRACKET, p.parseArrayExpression)
 
 	// infix functions for operators
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -75,6 +77,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.EQ, p.parseInfixExpression)
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	p.registerInfix(token.LBRACKET, p.parseArrayIndexExpression)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -392,6 +395,40 @@ func (p *Parser) parseKaamGarMuji() ast.Expression {
 
 func (p *Parser) parseStringExpression() ast.Expression {
 	return &ast.StringExpression{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parseArrayExpression() ast.Expression {
+	result := &ast.ArrayExpression{Token: p.curToken}
+	var current ast.Expression
+
+	if p.peekTokenIs(token.RBRACKET) {
+		return result
+	}
+	p.nextToken()
+	for {
+		current = p.parseExpression(LOWEST)
+		result.Elements = append(result.Elements, current)
+		result.Length += 1
+		p.nextToken()
+		if p.curTokenIs(token.COMMA) {
+			p.nextToken()
+		} else if p.curTokenIs(token.RBRACKET) {
+			break
+		} else {
+			p.errors = append(p.errors, "malformed array expression")
+			return nil
+		}
+	}
+	return result
+}
+
+func (p *Parser) parseArrayIndexExpression(arrExpr ast.Expression) ast.Expression {
+	result := &ast.ArrayIndexExpression{Token: p.curToken, Array: arrExpr}
+	p.nextToken()
+	indexExpr := p.parseExpression(LOWEST)
+	p.nextToken()
+	result.Index = indexExpr
+	return result
 }
 
 func (p *Parser) peekPrecedence() int {

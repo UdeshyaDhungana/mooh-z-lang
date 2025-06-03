@@ -551,6 +551,89 @@ func TestString(t *testing.T) {
 	}
 }
 
+func TestArrayLength(t *testing.T) {
+	tests := []struct {
+		statement string
+		expected  int
+	}{
+		{"[1,2,3]",
+			3},
+		{
+			"[\"one\", \"two\", \"three\"]",
+			3,
+		},
+		{
+			"[\"udeshya\", \"dhungana\", kaam_gar_muji(x) { x * x }]",
+			3,
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.statement)
+		p := NewParser(l)
+
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+		if len(program.Statements) != 1 {
+			t.Fatalf("expected 1 statement. got %d", len(program.Statements))
+		}
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("statement not an expression statement")
+		}
+		arr, ok := stmt.Expression.(*ast.ArrayExpression)
+		if !ok {
+			t.Fatalf("expression not an array expression")
+		}
+		if len(arr.Elements) != tt.expected {
+			t.Fatalf("array length does not match")
+		}
+	}
+}
+
+func TestArrayIndex(t *testing.T) {
+	tests := []struct {
+		statement string
+		index     int
+		expected  any
+	}{
+		{"thoos_muji arr = [1,2,3]; arr[0]",
+			0,
+			1,
+		},
+		{
+			"thoos_muji m = [\"one\", jhut_muji, \"three\"]; m[1]",
+			1,
+			false,
+		},
+		{
+			// 2 kept as a dummy
+			"2; [\"udeshya\", \"dhungana\", 4][2]",
+			2,
+			4,
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.statement)
+		p := NewParser(l)
+
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+		if len(program.Statements) != 2 {
+			t.Fatalf("expected 2 statements. got %d", len(program.Statements))
+		}
+		stmt, ok := program.Statements[1].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("statement not an expression statement")
+		}
+		_, ok = stmt.Expression.(*ast.ArrayIndexExpression)
+		if !ok {
+			t.Fatalf("expression not an array expression")
+		}
+	}
+}
+
 func TestCustom(t *testing.T) {
 	tests := []struct {
 		statement string
@@ -567,6 +650,7 @@ func TestCustom(t *testing.T) {
 		p := NewParser(l)
 
 		program := p.ParseProgram()
+		checkParserErrors(t, p)
 		fmt.Println(program.String())
 	}
 }

@@ -64,6 +64,19 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	return true
 }
 
+func testStringObject(t *testing.T, obj object.Object, expected string) bool {
+	result, ok := obj.(*object.String)
+	if !ok {
+		t.Errorf("object is not Integer. got=%T (%+v)", obj, obj)
+		return false
+	}
+	if result.Value != expected {
+		t.Errorf("object has wrong value. got=%s, want=%s", result.Value, expected)
+		return false
+	}
+	return true
+}
+
 func TestEvalBoolStatement(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -355,6 +368,41 @@ func TestBuiltinFunctions(t *testing.T) {
 				t.Errorf("wrong error message. expected=%q, got=%q",
 					expected, errObj.Message)
 			}
+		}
+	}
+}
+
+func TestArrayIndex(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected any
+	}{
+		// {
+		// 	`thoos_muji x = [1,2,3];
+		// 	x[0]`,
+		// 	1,
+		// },
+		{
+			`thoos_muji y = [sacho_muji, jhut_muji, jhut_muji];
+			x[2]`,
+			false,
+		},
+		// {
+		// 	`thoos_muji y = [\"Udeshya\", \"Dhungana\"];
+		// 	x[0]`,
+		// 	"Udeshya",
+		// },
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case bool:
+			testBoolObject(t, evaluated, expected)
+		case string:
+			testStringObject(t, evaluated, expected)
 		}
 	}
 }

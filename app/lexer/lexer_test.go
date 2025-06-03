@@ -28,6 +28,7 @@ func TestNextToken(t *testing.T) {
 	10 != 9;
 
 	"newstring"
+	[newarray, "newArray"]
 	`
 
 	tests := []struct {
@@ -108,6 +109,11 @@ func TestNextToken(t *testing.T) {
 		{token.INT, "9"},
 		{token.SEMICOLON, ";"},
 		{token.STRING, "newstring"},
+		{token.LBRACKET, "["},
+		{token.IDFIER, "newarray"},
+		{token.COMMA, ","},
+		{token.STRING, "newArray"},
+		{token.RBRACKET, "]"},
 		{token.EOF, ""},
 	}
 	l := NewLexer(input)

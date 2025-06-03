@@ -41,6 +41,10 @@ const (
 	// string
 	STRING = "STRING"
 
+	// array support
+	LBRACKET = "["
+	RBRACKET = "]"
+
 	// Language Keywords
 	THOOS_MUJI    = "THOOS_MUJI"
 	KAAM_GAR_MUJI = "KAAM_GAR_MUJI"
