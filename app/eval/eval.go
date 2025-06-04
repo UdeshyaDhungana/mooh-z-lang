@@ -32,6 +32,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalArrayIndexExpression(node, env)
 	case *ast.JabasammaMujiExpression:
 		return evalJabasammaMujiExpression(node.Condition, node.Consequent, env)
+	case *ast.GhumaMujiExpression:
+		return evalGhumaMujiExpression(node.Initialization, node.Condition, node.Update, node.Body, env)
 	case *ast.Boolean:
 		if node.Value {
 			return object.TRUE
@@ -211,6 +213,25 @@ func evalJabasammaMujiExpression(condition ast.Node, consequent ast.Node, env *o
 		result = Eval(consequent, env)
 	}
 	return result
+}
+
+func evalGhumaMujiExpression(initialization ast.Node, condition ast.Node, update ast.Node, body ast.Node, env *object.Environment) object.Object {
+	init := Eval(initialization, env)
+	if init.Type() == object.GALAT_MUJI_OBJ {
+		return init
+	}
+	for isConditionTrue(condition, env) {
+		// check condition
+		result := Eval(body, env)
+		if result.Type() == object.GALAT_MUJI_OBJ {
+			return result
+		}
+		up := Eval(update, env)
+		if up.Type() == object.GALAT_MUJI_OBJ {
+			return result
+		}
+	}
+	return object.NULL
 }
 
 // true should be checked against err == nil && bool == true

@@ -345,3 +345,26 @@ func (c *JabasammaMujiExpression) String() string {
 	out.WriteString(c.Consequent.String())
 	return out.String()
 }
+
+type GhumaMujiExpression struct {
+	Token          token.Token
+	Initialization Statement
+	Condition      Statement
+	Update         Expression
+	Body           *BlockStatement
+}
+
+func (g *GhumaMujiExpression) expressionNode() {}
+func (g *GhumaMujiExpression) TokenLiteral() string {
+	return g.Token.Literal
+}
+func (g *GhumaMujiExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("ghuma_muji (")
+	out.WriteString(g.Initialization.String())
+	out.WriteString(g.Condition.String())
+	out.WriteString(g.Update.String())
+	out.WriteString(")")
+	out.WriteString(g.Body.String())
+	return out.String()
+}

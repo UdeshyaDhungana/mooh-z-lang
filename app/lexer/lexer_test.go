@@ -33,6 +33,10 @@ func TestNextToken(t *testing.T) {
 	jaba_samma_muji(sacho_muji) {
 		jhut_muji;
 	}
+
+	ghuma_muji(thoos_muji i = 0; i < 100; i = i + 1) {
+		jhut_muji;
+	}
 	`
 
 	tests := []struct {
@@ -121,6 +125,27 @@ func TestNextToken(t *testing.T) {
 		{token.JABA_SAMMA_MUJI, "jaba_samma_muji"},
 		{token.LPAREN, "("},
 		{token.SACHO_MUJI, "sacho_muji"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.JHUT_MUJI, "jhut_muji"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.GHUMA_MUJI, "ghuma_muji"},
+		{token.LPAREN, "("},
+		{token.THOOS_MUJI, "thoos_muji"},
+		{token.IDFIER, "i"},
+		{token.ASSIGN, "="},
+		{token.INT, "0"},
+		{token.SEMICOLON, ";"},
+		{token.IDFIER, "i"},
+		{token.LT, "<"},
+		{token.INT, "100"},
+		{token.SEMICOLON, ";"},
+		{token.IDFIER, "i"},
+		{token.ASSIGN, "="},
+		{token.IDFIER, "i"},
+		{token.PLUS, "+"},
+		{token.INT, "1"},
 		{token.RPAREN, ")"},
 		{token.LBRACE, "{"},
 		{token.JHUT_MUJI, "jhut_muji"},

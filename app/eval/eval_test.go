@@ -390,7 +390,8 @@ func TestArrayIndex(t *testing.T) {
 	}
 }
 
-func TestLoopAndReassignment(t *testing.T) {
+// too lazy to write different test cases, i combined them
+func TestJabasammaMujiAndAssignment(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected int64
@@ -412,13 +413,37 @@ func TestLoopAndReassignment(t *testing.T) {
 
 			jaba_samma_muji(x < 32768) {
 				x = sum(x);
-			};
+			}
+			x;
 
 			yedi_muji (x = 4) {
 				100;
 			} nabhae_chikne {
 				200;
 			}
+			`,
+			100,
+		},
+	}
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		if !testIntegerObject(t, evaluated, tt.expected) {
+			t.Fatalf("failed to test JabasammaMujiExpression")
+		}
+	}
+}
+
+func TestGhumaMujiExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{
+			`
+			ghuma_muji(thoos_muji i = 0; i < 100; i = i + 1) {
+				sacho_muji;
+			}
+			i;
 			`,
 			100,
 		},
