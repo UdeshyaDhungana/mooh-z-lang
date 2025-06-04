@@ -47,6 +47,11 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		right := Eval(node.Right, env)
 		return evalPrefixExpression(node.Operator, right)
 	case *ast.InfixExpression:
+		/* If assignment operator, evaluate the right and assign to right */
+		idfier, ok := node.Left.(*ast.Identifier)
+		if node.Operator == "=" && ok {
+			return evalAssignment(idfier, node.Right, env)
+		}
 		left := Eval(node.Left, env)
 		right := Eval(node.Right, env)
 		return evalInfixExpression(left, node.Operator, right)
@@ -252,6 +257,21 @@ func evalThoosMujiStatement(name *ast.Identifier, value ast.Expression, env *obj
 	return newError("identifier is nil")
 }
 
+func evalAssignment(name *ast.Identifier, value ast.Expression, env *object.Environment) object.Object {
+	if name != nil {
+		_, ok := env.Get(name.Value)
+		if !ok {
+			return newError("reassignment to an undefined variable %s", name.Value)
+		}
+		v := Eval(value, env)
+		if v.Type() == object.GALAT_MUJI_OBJ {
+			return v
+		}
+		return env.Set(name.Value, v)
+	}
+	return newError("identifier is nil")
+}
+
 func evalKaamGarMujiExpression(node *ast.KaamGarMujiExpression, env *object.Environment) object.Object {
 	var result object.KaamGar
 	result.Body = node.Body
@@ -260,10 +280,10 @@ func evalKaamGarMujiExpression(node *ast.KaamGarMujiExpression, env *object.Envi
 	return &result
 }
 
-func evalCallExpression(node *ast.CallExpression, env *object.Environment) object.Object {
+func evalCallExpression(name *ast.CallExpression, env *object.Environment) object.Object {
 	// evaluate arguments
 	var evaluatedArgs []*object.Object
-	for _, v := range node.Arguments {
+	for _, v := range name.Arguments {
 		e := Eval(v, env)
 		if isError(e) {
 			return e
@@ -271,14 +291,14 @@ func evalCallExpression(node *ast.CallExpression, env *object.Environment) objec
 		evaluatedArgs = append(evaluatedArgs, &e)
 	}
 
-	fn := evalIdentifier(&ast.Identifier{Value: node.Function.TokenLiteral()}, env)
+	fn := evalIdentifier(&ast.Identifier{Value: name.Function.TokenLiteral()}, env)
 	switch fn.Type() {
 	case object.GALAT_MUJI_OBJ:
 		// might be a function expression itself
-		if kgr, ok := node.Function.(*ast.KaamGarMujiExpression); ok {
+		if kgr, ok := name.Function.(*ast.KaamGarMujiExpression); ok {
 			fn = evalKaamGarMujiExpression(kgr, env)
 		} else {
-			return newError("Cannot apply: %s", node.Function.String())
+			return newError("Cannot apply: %s", name.Function.String())
 		}
 	case object.BUILTIN_OBJECT:
 		f := fn.(*object.Builtin)
@@ -288,7 +308,7 @@ func evalCallExpression(node *ast.CallExpression, env *object.Environment) objec
 	if f, ok := fn.(*object.KaamGar); ok {
 		return evalUserDefinedCall(f, evaluatedArgs)
 	}
-	return newError("cannot apply %s; not a function or a builtin", node.Function.TokenLiteral())
+	return newError("cannot apply %s; not a function or a builtin", name.Function.TokenLiteral())
 }
 
 func evalBuiltin(b *object.Builtin, args []*object.Object) object.Object {

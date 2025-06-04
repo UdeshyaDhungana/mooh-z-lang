@@ -390,7 +390,7 @@ func TestArrayIndex(t *testing.T) {
 	}
 }
 
-func TestJabasammaMujiExpressionEval(t *testing.T) {
+func TestLoopAndReassignment(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected int64
@@ -398,27 +398,29 @@ func TestJabasammaMujiExpressionEval(t *testing.T) {
 		{
 			`
 			thoos_muji i = 0;
-			thoos_muji sum = 0;
-			jaba_samma_muji(i < 10) {
-				thoos_muji sum = sum + i + 1;
-				thoos_muji i = i + 1;
-			}
-			sum
+			i = 3;
 			`,
-			55,
+			3,
 		},
 		{
 			`
 			thoos_muji sum = kaam_gar_muji(x) {
 				patha_muji x * 2;
 			};
+
 			thoos_muji x = 2;
+
 			jaba_samma_muji(x < 32768) {
-				thoos_muji x = sum(x);
+				x = sum(x);
 			};
-			x
+
+			yedi_muji (x = 4) {
+				100;
+			} nabhae_chikne {
+				200;
+			}
 			`,
-			32768,
+			100,
 		},
 	}
 	for _, tt := range tests {

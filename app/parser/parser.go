@@ -29,6 +29,7 @@ type Parser struct {
 const (
 	_ int = iota
 	LOWEST
+	ASSIGN
 	EQUALS
 	LESSGREATER
 	SUM
@@ -38,6 +39,7 @@ const (
 )
 
 var precedences = map[token.TokenType]int{
+	token.ASSIGN:   ASSIGN,
 	token.EQ:       EQUALS,
 	token.NOT_EQ:   EQUALS,
 	token.LT:       LESSGREATER,
@@ -66,6 +68,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.STRING, p.parseStringExpression)
 	p.registerPrefix(token.LBRACKET, p.parseArrayExpression)
 	p.registerPrefix(token.JABA_SAMMA_MUJI, p.parseJabasammaMujiExpression)
+	// p.registerPrefix(token.ASSIGN, p.parseReassignmentExpression)
 
 	// infix functions for operators
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -77,6 +80,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(token.ASSIGN, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.LBRACKET, p.parseArrayIndexExpression)
 
