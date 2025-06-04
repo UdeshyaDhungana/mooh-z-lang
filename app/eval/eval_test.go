@@ -401,14 +401,25 @@ func TestJabasammaMujiExpressionEval(t *testing.T) {
 			thoos_muji sum = 0;
 			jaba_samma_muji(i < 10) {
 				thoos_muji sum = sum + i + 1;
+				thoos_muji i = i + 1;
 			}
+			sum
 			`,
 			55,
 		},
-		// {
-		// 	``,
-		// 	100,
-		// },
+		{
+			`
+			thoos_muji sum = kaam_gar_muji(x) {
+				patha_muji x * 2;
+			};
+			thoos_muji x = 2;
+			jaba_samma_muji(x < 32768) {
+				thoos_muji x = sum(x);
+			};
+			x
+			`,
+			32768,
+		},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)

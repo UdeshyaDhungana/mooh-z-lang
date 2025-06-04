@@ -30,6 +30,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalArrayExpression(node, env)
 	case *ast.ArrayIndexExpression:
 		return evalArrayIndexExpression(node, env)
+	case *ast.JabasammaMujiExpression:
+		return evalJabasammaMujiExpression(node.Condition, node.Consequent, env)
 	case *ast.Boolean:
 		if node.Value {
 			return object.TRUE
@@ -49,6 +51,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		right := Eval(node.Right, env)
 		return evalInfixExpression(left, node.Operator, right)
 	}
+	fmt.Printf("FATAL: Eval() does not implement %s node\n", node.String())
 	return nil
 }
 
@@ -178,15 +181,7 @@ func evalForString(left object.Object, operator string, right object.Object) obj
 }
 
 func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative ast.Node, env *object.Environment) object.Object {
-	cc := Eval(condition, env)
-	if cc == nil {
-		return nil
-	}
-	if isError(cc) {
-		return cc
-	}
-
-	if utils.IsTruthy(cc) {
+	if isConditionTrue(condition, env) {
 		b, ok := consequent.(*ast.BlockStatement)
 		if !ok {
 			// maybe we will support non block statements in the future
@@ -203,6 +198,27 @@ func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative 
 		}
 		return evalStatements(b.Statements, env)
 	}
+}
+
+func evalJabasammaMujiExpression(condition ast.Node, consequent ast.Node, env *object.Environment) object.Object {
+	var result object.Object
+	for isConditionTrue(condition, env) {
+		result = Eval(consequent, env)
+	}
+	return result
+}
+
+// true should be checked against err == nil && bool == true
+// the only case where bool = false and err == nil is when Eval() does not implement case for the node
+func isConditionTrue(condition ast.Node, env *object.Environment) bool {
+	cc := Eval(condition, env)
+	if cc == nil {
+		return false
+	}
+	if isError(cc) {
+		return false
+	}
+	return utils.IsTruthy(cc)
 }
 
 func evalPathaMujiStatement(value ast.Node, env *object.Environment) object.Object {
