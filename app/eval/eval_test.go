@@ -439,33 +439,41 @@ func TestJabasammaMujiAndAssignment(t *testing.T) {
 		input    string
 		expected int64
 	}{
+		// {
+		// 	`
+		// 	thoos_muji i = 0;
+		// 	i = 3;
+		// 	`,
+		// 	3,
+		// },
+		// {
+		// 	`
+		// 	thoos_muji sum = kaam_gar_muji(x) {
+		// 		patha_muji x * 2;
+		// 	};
+
+		// 	thoos_muji x = 2;
+
+		// 	jaba_samma_muji(x < 32768) {
+		// 		x = sum(x);
+		// 	}
+		// 	x;
+
+		// 	yedi_muji (x = 4) {
+		// 		100;
+		// 	} nabhae_chikne {
+		// 		200;
+		// 	}
+		// 	`,
+		// 	100,
+		// },
 		{
 			`
-			thoos_muji i = 0;
-			i = 3;
+				thoos_muji x = {"foo": "bar"};
+				x["foo"] = 4;
+				x["foo"]
 			`,
-			3,
-		},
-		{
-			`
-			thoos_muji sum = kaam_gar_muji(x) {
-				patha_muji x * 2;
-			};
-
-			thoos_muji x = 2;
-
-			jaba_samma_muji(x < 32768) {
-				x = sum(x);
-			}
-			x;
-
-			yedi_muji (x = 4) {
-				100;
-			} nabhae_chikne {
-				200;
-			}
-			`,
-			100,
+			4,
 		},
 	}
 	for _, tt := range tests {

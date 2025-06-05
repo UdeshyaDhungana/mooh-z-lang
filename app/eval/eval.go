@@ -52,9 +52,9 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalPrefixExpression(node.Operator, right)
 	case *ast.InfixExpression:
 		/* If assignment operator, evaluate the right and assign to right */
-		idfier, ok := node.Left.(*ast.Identifier)
-		if node.Operator == "=" && ok {
-			return evalAssignment(idfier, node.Right, env)
+		/* can be either x = 34, or x[24] = 53 */
+		if node.Operator == "=" {
+			return evalAssignment(node.Left, node.Right, env)
 		}
 		left := Eval(node.Left, env)
 		right := Eval(node.Right, env)
@@ -280,19 +280,39 @@ func evalThoosMujiStatement(name *ast.Identifier, value ast.Expression, env *obj
 	return newError("identifier is nil")
 }
 
-func evalAssignment(name *ast.Identifier, value ast.Expression, env *object.Environment) object.Object {
-	if name != nil {
-		_, ok := env.Get(name.Value)
-		if !ok {
-			return newError("reassignment to an undefined variable %s", name.Value)
-		}
-		v := Eval(value, env)
-		if v.Type() == object.GALAT_MUJI_OBJ {
-			return v
-		}
-		return env.Set(name.Value, v)
+func evalAssignment(name ast.Expression, value ast.Expression, env *object.Environment) object.Object {
+	if name == nil {
+		return newError("left operand of assignment operator is nil")
 	}
-	return newError("identifier is nil")
+	v := Eval(value, env)
+	if v.Type() == object.GALAT_MUJI_OBJ {
+		return v
+	}
+	switch (name).(type) {
+	case *ast.Identifier:
+		n := (name).(*ast.Identifier)
+		_, ok := env.Get(n.Value)
+		if !ok {
+			return newError("reassignment to an undefined variable %s", n.Value)
+		}
+		return env.Set(n.Value, v)
+	case *ast.IndexExpression:
+		return evalAssignmentUsingIndexExpression(name, env)
+	default:
+		return newError("left operand of assignment operator is neither identifier nor indexexpression. got=%T", name)
+	}
+	// if name != nil {
+	// 	_, ok := env.Get(name.Value)
+	// 	if !ok {
+	// 		return newError("reassignment to an undefined variable %s", name.Value)
+	// 	}
+	// 	v := Eval(value, env)
+	// 	if v.Type() == object.GALAT_MUJI_OBJ {
+	// 		return v
+	// 	}
+	// 	return env.Set(name.Value, v)
+	// }
+	// return newError("identifier is nil")
 }
 
 func evalKaamGarMujiExpression(node *ast.KaamGarMujiExpression, env *object.Environment) object.Object {
