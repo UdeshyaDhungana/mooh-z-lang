@@ -24,6 +24,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalStatements(node.Statements, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+	case *ast.FloatLiteral:
+		return &object.Float{Value: node.Value}
 	case *ast.StringExpression:
 		return &object.String{Value: node.Value}
 	case *ast.ArrayExpression:
@@ -120,74 +122,195 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 }
 
 func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
-	if right.Type() != object.INTEGER_OBJ {
+	switch r := right.(type) {
+	case *object.Integer:
+		return &object.Integer{Value: -r.Value}
+	case *object.Float:
+		return &object.Float{Value: -r.Value}
+	default:
 		return newError("unknown operator: -%s", right.Type())
 	}
-	value := right.(*object.Integer)
-	return &object.Integer{Value: -value.Value}
+}
+
+/* Infix begin */
+func evalFantasticFour(left object.Object, operator string, right object.Object) object.Object {
+	if left.Type() == right.Type() && operator == "+" {
+		switch l := left.(type) {
+		case *object.String:
+			r := right.(*object.String)
+			return &object.String{Value: l.Value + r.Value}
+		case *object.Array:
+			r := right.(*object.Array)
+			return &object.Array{Arr: append(l.Arr, r.Arr...)}
+		}
+	}
+	if !areBothNumbers(left, right) {
+		return newError("unsupported operation %s %s %s", left.Type(), operator, right.Type())
+	}
+	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
+		l := left.(*object.Integer).Value
+		r := right.(*object.Integer).Value
+		var res object.Integer
+		switch operator {
+		case "+":
+			res.Value = l + r
+		case "-":
+			res.Value = l - r
+		case "*":
+			res.Value = l * r
+		case "/":
+			res.Value = l / r
+		default:
+			return newError("unsupported operation %s %s %s", left.Type(), operator, right.Type())
+		}
+		return &res
+	}
+	var leftVal, rightVal float64
+	var result object.Float
+
+	if left.Type() == object.INTEGER_OBJ {
+		leftVal = float64(left.(*object.Integer).Value)
+	} else {
+		leftVal = left.(*object.Float).Value
+	}
+
+	if right.Type() == object.INTEGER_OBJ {
+		rightVal = float64(right.(*object.Integer).Value)
+	} else {
+		rightVal = right.(*object.Float).Value
+	}
+
+	switch operator {
+	case "+":
+		result.Value = leftVal + rightVal
+	case "-":
+		result.Value = leftVal - rightVal
+	case "*":
+		result.Value = leftVal * rightVal
+	case "/":
+		result.Value = leftVal / rightVal
+	default:
+		return newError("unsupported operation %s %s %s", left.Type(), operator, right.Type())
+	}
+	return &result
+}
+
+func evalEQ(left object.Object, right object.Object) *object.Boolean {
+	if left.Type() != right.Type() {
+		return object.FALSE
+	}
+	switch l := left.(type) {
+	case *object.Integer:
+		r := right.(*object.Integer)
+		if l.Value == r.Value {
+			return object.TRUE
+		}
+		return object.FALSE
+	case *object.Float:
+		r := right.(*object.Float)
+		if l.Value == r.Value {
+			return object.TRUE
+		}
+		return object.FALSE
+	case *object.Boolean:
+		r := right.(*object.Boolean)
+		if l.Value == r.Value {
+			return object.TRUE
+		}
+		return object.FALSE
+	default:
+		// we can either go with checking if they are same objects
+		// or take the python's approach of checking each element
+		// we do neither ¯\_(ツ)_/¯
+		return object.FALSE
+	}
+}
+
+func evalLT(left object.Object, right object.Object) object.Object {
+	// ensure both of them are either float or int
+	if !areBothNumbers(left, right) {
+		return newError("cannot use '<' operator for %s", left.Type())
+	}
+	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
+		l := left.(*object.Integer).Value
+		r := right.(*object.Integer).Value
+		return utils.GetBoolRef(l < r)
+	}
+	var leftVal, rightVal float64
+	if left.Type() == object.INTEGER_OBJ {
+		leftVal = float64(left.(*object.Integer).Value)
+	} else {
+		leftVal = (left.(*object.Float).Value)
+	}
+
+	if right.Type() == object.INTEGER_OBJ {
+		rightVal = float64(right.(*object.Integer).Value)
+	} else {
+		rightVal = right.(*object.Float).Value
+	}
+
+	return utils.GetBoolRef(leftVal < rightVal)
+}
+
+func evalGT(left object.Object, right object.Object) object.Object {
+	lt := evalLT(left, right)
+	if lt.Type() == object.GALAT_MUJI_OBJ {
+		return lt
+	}
+	l := lt.(*object.Boolean)
+	if l.Value {
+		return object.FALSE
+	}
+	return object.TRUE
 }
 
 func evalInfixExpression(left object.Object, operator string, right object.Object) object.Object {
-	if left.Type() != right.Type() {
-		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
-	}
-	if left.Type() == object.INTEGER_OBJ {
-		return evalForInteger(left, operator, right)
-	}
-	if left.Type() == object.BOOLEAN_OBJ {
-		return evalForBoolean(left, operator, right)
-	}
-	if left.Type() == object.STRING {
-		return evalForString(left, operator, right)
-	}
-	return newError("type unsupported: %s %s %s", left.Type(), operator, right.Type())
-}
-
-func evalForInteger(left object.Object, operator string, right object.Object) object.Object {
-	l := left.(*object.Integer)
-	r := right.(*object.Integer)
 	switch operator {
-	case "+":
-		return &object.Integer{Value: l.Value + r.Value}
-	case "-":
-		return &object.Integer{Value: l.Value - r.Value}
-	case "*":
-		return &object.Integer{Value: l.Value * r.Value}
-	case "/":
-		return &object.Integer{Value: l.Value / r.Value}
+	case "+", "-", "*", "/":
+		return evalFantasticFour(left, operator, right)
+	case "==":
+		return evalEQ(left, right)
+	case "!=":
+		eq := evalEQ(left, right)
+		if eq == object.TRUE {
+			return object.FALSE
+		}
+		return object.TRUE
 	case ">":
-		return utils.GetBoolRef(l.Value > r.Value)
+		return evalGT(left, right)
+	case ">=":
+		isGT := evalGT(left, right)
+		if isGT.Type() == object.GALAT_MUJI_OBJ {
+			return isGT
+		}
+		isEQ := evalEQ(left, right)
+		if isEQ.Type() == object.GALAT_MUJI_OBJ {
+			return isEQ
+		}
+		return &object.Boolean{Value: utils.IsTruthy(isGT) || utils.IsTruthy(isEQ)}
 	case "<":
-		return utils.GetBoolRef(l.Value < r.Value)
-	case "==":
-		return utils.GetBoolRef(l.Value == r.Value)
-	case "!=":
-		return utils.GetBoolRef(l.Value != r.Value)
+		return evalLT(left, right)
+	case "<=":
+		isLT := evalLT(left, right)
+		if isLT.Type() == object.GALAT_MUJI_OBJ {
+			return isLT
+		}
+		isEQ := evalEQ(left, right)
+		if isEQ.Type() == object.GALAT_MUJI_OBJ {
+			return isEQ
+		}
+		return &object.Boolean{Value: utils.IsTruthy(isLT) || utils.IsTruthy(isEQ)}
+	default:
+		return newError("unsupported operator %s", operator)
 	}
-	return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 }
 
-func evalForBoolean(left object.Object, operator string, right object.Object) object.Object {
-	l := left.(*object.Boolean)
-	r := right.(*object.Boolean)
-	switch operator {
-	case "==":
-		return utils.GetBoolRef(l.Value == r.Value)
-	case "!=":
-		return utils.GetBoolRef(l.Value != r.Value)
-	}
-	return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+func areBothNumbers(left object.Object, right object.Object) bool {
+	return (left.Type() == object.INTEGER_OBJ || left.Type() == object.FLOAT_OBJ) &&
+		(right.Type() == object.INTEGER_OBJ || right.Type() == object.FLOAT_OBJ)
 }
 
-func evalForString(left object.Object, operator string, right object.Object) object.Object {
-	l := left.(*object.String)
-	r := right.(*object.String)
-	switch operator {
-	case "+":
-		return &object.String{Value: l.Value + r.Value}
-	}
-	return newError("unkown operator: %s %s %s", l.Type(), operator, r.Type())
-}
+/* End Infix */
 
 func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative ast.Node, env *object.Environment) object.Object {
 	if isConditionTrue(condition, env) {

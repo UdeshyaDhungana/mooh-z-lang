@@ -1,6 +1,10 @@
 package eval
 
-import "github.com/udeshyadhungana/interprerer/app/object"
+import (
+	"fmt"
+
+	"github.com/udeshyadhungana/interprerer/app/object"
+)
 
 var builtins = map[string]*object.Builtin{
 	//common
@@ -61,6 +65,15 @@ var builtins = map[string]*object.Builtin{
 			popped := a.Arr[idx]
 			a.Arr = append(a.Arr[:idx], a.Arr[idx+1:]...)
 			return popped
+		},
+	},
+	"bhan_muji": {
+		Fn: func(args ...object.Object) object.Object {
+			for _, a := range args {
+				fmt.Print(a.Inspect())
+			}
+			fmt.Println()
+			return object.NULL
 		},
 	},
 }

@@ -12,6 +12,7 @@ type ObjectType string
 
 const (
 	INTEGER_OBJ       ObjectType = "INTEGER"
+	FLOAT_OBJ         ObjectType = "FLOAT"
 	BOOLEAN_OBJ       ObjectType = "BOOLEAN"
 	NULL_OBJ          ObjectType = "NULL"
 	PATHA_MUJI_OBJ    ObjectType = "RETURN"
@@ -46,6 +47,19 @@ func (i *Integer) Inspect() string {
 
 func (i *Integer) Type() ObjectType {
 	return INTEGER_OBJ
+}
+
+// Float
+type Float struct {
+	Value float64
+}
+
+func (f *Float) Inspect() string {
+	return fmt.Sprintf("%f", f.Value)
+}
+
+func (f *Float) Type() ObjectType {
+	return FLOAT_OBJ
 }
 
 // Boolean

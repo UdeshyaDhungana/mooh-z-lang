@@ -90,6 +90,16 @@ func (il *IntegerLiteral) expressionNode()      {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string       { return il.Token.Literal }
 
+/* Float literal */
+type FloatLiteral struct {
+	Token token.Token
+	Value float64
+}
+
+func (il *FloatLiteral) expressionNode()      {}
+func (il *FloatLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *FloatLiteral) String() string       { return il.Token.Literal }
+
 /* Pathamuji statement */
 type PathaMujiStatement struct {
 	Token token.Token

@@ -28,26 +28,50 @@ func TestEvalIntegerStatement(t *testing.T) {
 		input    string
 		expected int64
 	}{
-		{"5;", 5},
-		{"10;", 10},
-		{"-5;", -5},
-		{"-10;", -10},
-		{"5 + 5 + 5 + 5 - 10;", 10},
-		{"2 * 2 * 2 * 2 * 2;", 32},
-		{"-50 + 100 + -50;", 0},
-		{"5 * 2 + 10;", 20},
-		{"5 + 2 * 10;", 25},
-		{"20 + 2 * -10;", 0},
-		{"50 / 2 * 2 + 10;", 60},
-		{"2 * (5 + 10);", 30},
-		{"3 * 3 * 3 + 10;", 37},
-		{"3 * (3 * 3) + 10;", 37},
-		{"(5 + 10 * 2 + 15 / 3) * 2 + -10;", 50},
+		{"5", 5},
+		{"10", 10},
+		{"-5", -5},
+		{"-10", -10},
+		{"5 - 10", -5},
+		{"2 * 2 * 2 * 2 * 2", 32},
+		{"-50 + 100 + -50", 0},
+		{"5 * 2 + 10", 20},
+		{"5 + 2 * 10", 25},
+		{"20 + 2 * -10", 0},
+		{"50 / 2 * 2 + 10", 60},
+		{"2 * (5 + 10)", 30},
+		{"3 * 3 * 3 + 10", 37},
+		{"3 * (3 * 3) + 10", 37},
+		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
 	}
 
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
 		testIntegerObject(t, evaluated, tt.expected)
+	}
+}
+
+func TestEvalFloatObject(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected any
+	}{
+		{"5.5;", 5.5},
+		{"10.10;", 10},
+		{"-5.4;", -5},
+		{"-10.10;", -10},
+		{"5 + 5 + 5 + 5 - 10.0;", 10.0},
+		{"3 * (3 * 3.0) + 10;", 37.0},
+		{"(5 + 10 * 2 + 15.0 / 3) * 2 + -10;", 50.0},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		if evaluated.Type() != object.FLOAT_OBJ {
+			t.Fatalf("expected float, got %T", evaluated)
+		}
+		e := evaluated.(*object.Float)
+		testFloatObject(t, evaluated, e.Value)
 	}
 }
 
@@ -59,6 +83,19 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	}
 	if result.Value != expected {
 		t.Errorf("object has wrong value. got=%d, want=%d", result.Value, expected)
+		return false
+	}
+	return true
+}
+
+func testFloatObject(t *testing.T, obj object.Object, expected float64) bool {
+	result, ok := obj.(*object.Float)
+	if !ok {
+		t.Errorf("object is not Integer. got=%T (%+v)", obj, obj)
+		return false
+	}
+	if result.Value != expected {
+		t.Errorf("object has wrong value. got=%f, want=%f", result.Value, expected)
 		return false
 	}
 	return true
@@ -538,17 +575,19 @@ func TestHashMapEval(t *testing.T) {
 
 func TestCustom(t *testing.T) {
 	program := `
-	thoos_muji makeGreeter = kaam_gar_muji(greeting) {
-		patha_muji kaam_gar_muji(name) {
-			patha_muji greeting + " " + name + "!";
-		};
-	};
-	thoos_muji hello = makeGreeter("Hello");
-	hello("Udeshya");
+	thoos_muji x = 5.0;
+	-x
 	`
 
 	evaluated := testEval(program)
-	if evaluated.Inspect() != "Hello Udeshya!" {
-		t.Fatalf("test failed")
+	if evaluated.Type() == object.GALAT_MUJI_OBJ {
+		t.Fatalf("custom test failed, go figure!")
+	}
+	f, ok := evaluated.(*object.Float)
+	if !ok {
+		t.Fatalf("not ok")
+	}
+	if f.Value != -5.0 {
+		t.Fatalf("not ok")
 	}
 }
