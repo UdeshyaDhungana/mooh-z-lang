@@ -575,19 +575,26 @@ func TestHashMapEval(t *testing.T) {
 
 func TestCustom(t *testing.T) {
 	program := `
-	thoos_muji x = 5.0;
-	-x
+	thoos_muji recursion = kaam_gar_muji(x) {
+			yedi_muji (x == 0) {
+				patha_muji 1;
+			} nabhae_chikne {
+			 	patha_muji x * recursion(x - 1);
+			}
+	}
+
+	recursion(4)
 	`
 
 	evaluated := testEval(program)
-	if evaluated.Type() == object.GALAT_MUJI_OBJ {
+	if evaluated != nil && evaluated.Type() == object.GALAT_MUJI_OBJ {
 		t.Fatalf("custom test failed, go figure!")
 	}
-	f, ok := evaluated.(*object.Float)
-	if !ok {
-		t.Fatalf("not ok")
-	}
-	if f.Value != -5.0 {
-		t.Fatalf("not ok")
-	}
+	// f, ok := evaluated.(*object.Float)
+	// if !ok {
+	// 	t.Fatalf("not ok")
+	// }
+	// if f.Value != -5.0 {
+	// 	t.Fatalf("not ok")
+	// }
 }

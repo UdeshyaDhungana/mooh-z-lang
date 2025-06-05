@@ -1,6 +1,6 @@
 # Makefile
 
-APP_NAME := interprerer
+APP_NAME := muji
 APP_DIR := ./app
 BUILD_DIR := ./build
 BUILD_FILE := $(BUILD_DIR)/$(APP_NAME)

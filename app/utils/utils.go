@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"io"
 	"unicode"
 
 	"github.com/udeshyadhungana/interprerer/app/object"
@@ -32,4 +33,11 @@ func GetBoolRef(x bool) *object.Boolean {
 		return object.TRUE
 	}
 	return object.FALSE
+}
+
+/* Interpreter */
+func PrintParserErrors(out io.Writer, errors []string) {
+	for _, msg := range errors {
+		io.WriteString(out, "\t"+msg+"\n")
+	}
 }

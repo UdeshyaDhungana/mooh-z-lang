@@ -9,6 +9,7 @@ import (
 	"github.com/udeshyadhungana/interprerer/app/lexer"
 	"github.com/udeshyadhungana/interprerer/app/object"
 	"github.com/udeshyadhungana/interprerer/app/parser"
+	"github.com/udeshyadhungana/interprerer/app/utils"
 )
 
 const PROMPT = "(lekh_muji) >> "
@@ -29,7 +30,7 @@ func Start(in io.Reader, out io.Writer) {
 
 		program := p.ParseProgram()
 		if len(p.Errors()) != 0 {
-			printParserErrors(out, p.Errors())
+			utils.PrintParserErrors(out, p.Errors())
 			continue
 		}
 
@@ -38,11 +39,5 @@ func Start(in io.Reader, out io.Writer) {
 			io.WriteString(out, evaluated.Inspect())
 			io.WriteString(out, "\n")
 		}
-	}
-}
-
-func printParserErrors(out io.Writer, errors []string) {
-	for _, msg := range errors {
-		io.WriteString(out, "\t"+msg+"\n")
 	}
 }
