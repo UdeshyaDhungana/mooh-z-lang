@@ -762,6 +762,50 @@ func TestHashExpressionParsing(t *testing.T) {
 	}
 }
 
+func TestComments(t *testing.T) {
+	tests := []struct {
+		statement string
+		expected  string
+	}{
+		{
+			`
+			thoos_muji x = 34;
+			$ bich ko line muji $
+			x
+			`,
+			"x",
+		},
+		{
+			`
+			thoos_muji x = 34;
+			$ bich ko line muji $
+			x
+			$ last ko line muji $
+			`,
+			"x",
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.statement)
+		p := NewParser(l)
+
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 2 {
+			t.Fatalf("program.Statements not enough. want=%d, got=%d", 2, len(program.Statements))
+		}
+		s, ok := program.Statements[1].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[1] not expressionstatement, got=%T", s)
+		}
+		if s.Expression.String() != tt.expected {
+			t.Fatalf("Expected `x` got=%s", s.Expression.String())
+		}
+	}
+}
+
 func TestCustom(t *testing.T) {
 	tests := []struct {
 		statement string

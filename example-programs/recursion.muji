@@ -1,10 +1,11 @@
 
+$ recursion wala program $
 thoos_muji recursion = kaam_gar_muji(x) {
     yedi_muji (x == 0) {
         patha_muji 1;
     } nabhae_chikne {
         patha_muji x * recursion(x - 1);
     }
-}
+};
 
-bhan_muji(recursion(4))
+bhan_muji(recursion(4));

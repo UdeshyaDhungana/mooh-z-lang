@@ -71,6 +71,18 @@ func (l *Lexer) NextToken() token.Token {
 		tok = token.NewToken(token.SEMICOLON, l.ch)
 	case ',':
 		tok = token.NewToken(token.COMMA, l.ch)
+	case '$':
+		l.readRune()
+		for l.ch != '$' && l.ch != 0 {
+			l.readRune()
+		}
+		if l.ch == 0 {
+			tok.Literal = ""
+			tok.Type = token.EOF
+		} else {
+			l.readRune()
+			return l.NextToken()
+		}
 	case '(':
 		tok = token.NewToken(token.LPAREN, l.ch)
 	case ')':
