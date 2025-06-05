@@ -368,3 +368,25 @@ func (g *GhumaMujiExpression) String() string {
 	out.WriteString(g.Body.String())
 	return out.String()
 }
+
+type HashExpression struct {
+	Token token.Token
+	Pairs map[Expression]Expression
+}
+
+func (h *HashExpression) expressionNode() {}
+func (h *HashExpression) TokenLiteral() string {
+	return h.Token.Literal
+}
+
+func (h *HashExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("{")
+	var inside []string
+	for key, val := range h.Pairs {
+		inside = append(inside, fmt.Sprintf("%s%s%s", key.String(), ": ", val.String()))
+	}
+	out.WriteString(strings.Join(inside, ", "))
+	out.WriteString("}")
+	return out.String()
+}

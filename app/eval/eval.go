@@ -34,6 +34,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalJabasammaMujiExpression(node.Condition, node.Consequent, env)
 	case *ast.GhumaMujiExpression:
 		return evalGhumaMujiExpression(node.Initialization, node.Condition, node.Update, node.Body, env)
+	case *ast.HashExpression:
+		return evalHashExpression(node, env)
 	case *ast.Boolean:
 		if node.Value {
 			return object.TRUE
@@ -390,6 +392,21 @@ func evalArrayIndexExpression(a *ast.ArrayIndexExpression, env *object.Environme
 		return newError("array out of bounds")
 	}
 	return arr.Arr[idx.Value]
+}
+
+func evalHashExpression(node *ast.HashExpression, env *object.Environment) object.Object {
+	pairs := node.Pairs
+	result := object.HashMap{Pairs: make(map[string]object.Object)}
+	for k, v := range pairs {
+		key := Eval(k, env)
+		if key.Type() != object.STRING {
+			return newError("key must be a string")
+		}
+		keyStr := key.(*object.String)
+		val := Eval(v, env)
+		result.Pairs[keyStr.Value] = val
+	}
+	return &result
 }
 
 func Apply(f *object.KaamGar) object.Object {

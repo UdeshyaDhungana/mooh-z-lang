@@ -69,7 +69,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LBRACKET, p.parseArrayExpression)
 	p.registerPrefix(token.JABA_SAMMA_MUJI, p.parseJabasammaMujiExpression)
 	p.registerPrefix(token.GHUMA_MUJI, p.parseGhumaMujiExpression)
-	// p.registerPrefix(token.ASSIGN, p.parseReassignmentExpression)
+	p.registerPrefix(token.LBRACE, p.parseHashExpression)
 
 	// infix functions for operators
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -232,7 +232,7 @@ func (p *Parser) parseYediMujiExpression() ast.Expression {
 	stmt.Condition = p.parseExpressionUsingPratt(LOWEST)
 	p.nextToken()
 	if !p.curTokenIs(token.RPAREN) && !p.peekTokenIs(token.LBRACE) {
-		p.errors = append(p.errors, "expected ) after condition and block statement after )")
+		p.errors = append(p.errors, "expected ) after condition and block statement after that")
 		return nil
 	}
 	p.nextToken()
@@ -504,6 +504,22 @@ func (p *Parser) parseArrayIndexExpression(arrExpr ast.Expression) ast.Expressio
 	indexExpr := p.parseExpressionUsingPratt(LOWEST)
 	p.nextToken()
 	result.Index = indexExpr
+	return result
+}
+
+func (p *Parser) parseHashExpression() ast.Expression {
+	result := &ast.HashExpression{Token: p.curToken, Pairs: make(map[ast.Expression]ast.Expression)}
+	for !p.curTokenIs(token.RBRACE) {
+		p.nextToken()
+		k := p.parseExpressionUsingPratt(LOWEST)
+		if !p.expectPeek(token.COLON) {
+			return nil
+		}
+		p.nextToken()
+		v := p.parseExpressionUsingPratt(LOWEST)
+		result.Pairs[k] = v
+		p.nextToken()
+	}
 	return result
 }
 

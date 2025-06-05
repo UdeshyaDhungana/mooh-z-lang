@@ -674,6 +674,50 @@ func TestJabasammaMujiExpressionParsing(t *testing.T) {
 	}
 }
 
+func TestHashExpressionParsing(t *testing.T) {
+	tests := []struct {
+		program    string
+		statements int
+		pairs      int
+	}{
+		{
+			`
+			{"foo": "bar", "baz": 23};
+			`,
+			1,
+			2,
+		},
+		{
+			`
+			{"foo": "bar", "baz": 23, "foo": "baz"};
+			`,
+			1,
+			3,
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.NewLexer(tt.program)
+		p := NewParser(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+		if len(program.Statements) != tt.statements {
+			t.Fatalf("expected %d statements, got=%d", tt.statements, len(program.Statements))
+		}
+		s, ok := program.Statements[tt.statements-1].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[%d] is not an expression statement", tt.statements-1)
+		}
+		h, ok := s.Expression.(*ast.HashExpression)
+		if !ok {
+			t.Fatalf("expression is not hash expression")
+		}
+		if len(h.Pairs) != tt.pairs {
+			t.Fatalf("not enough pairs parsed. got=%d, expected=%d", len(h.Pairs), tt.pairs)
+		}
+	}
+}
+
 func TestCustom(t *testing.T) {
 	tests := []struct {
 		statement string

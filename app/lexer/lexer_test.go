@@ -37,6 +37,8 @@ func TestNextToken(t *testing.T) {
 	ghuma_muji(thoos_muji i = 0; i < 100; i = i + 1) {
 		jhut_muji;
 	}
+
+	{"foo": "bar"}
 	`
 
 	tests := []struct {
@@ -150,6 +152,11 @@ func TestNextToken(t *testing.T) {
 		{token.LBRACE, "{"},
 		{token.JHUT_MUJI, "jhut_muji"},
 		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.LBRACE, "{"},
+		{token.STRING, "foo"},
+		{token.COLON, ":"},
+		{token.STRING, "bar"},
 		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}

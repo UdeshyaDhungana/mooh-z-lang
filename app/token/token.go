@@ -41,6 +41,9 @@ const (
 	// string
 	STRING = "STRING"
 
+	// hash
+	COLON = ":"
+
 	// array support
 	LBRACKET = "["
 	RBRACKET = "]"

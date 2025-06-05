@@ -457,6 +457,32 @@ func TestGhumaMujiExpression(t *testing.T) {
 	}
 }
 
+// hash maps
+func TestHashMapEval(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected any
+	}{
+		{
+			`
+			thoos_muji x = 43;
+			{"foo": "bar", "bar": x}
+			`,
+			2,
+		},
+	}
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		if evaluated.Type() != object.HASHMAP_OBJECT {
+			t.Fatalf("expected hashmap; got=%T", evaluated)
+		}
+		e := evaluated.(*object.HashMap)
+		if len(e.Pairs) != tt.expected {
+			t.Fatalf("not enough pairs, got=%d, expected=%d", len(e.Pairs), tt.expected)
+		}
+	}
+}
+
 // re-assignment
 
 func TestCustom(t *testing.T) {

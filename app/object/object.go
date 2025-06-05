@@ -20,6 +20,7 @@ const (
 	STRING            ObjectType = "STRING"
 	BUILTIN_OBJECT    ObjectType = "BUILTIN"
 	ARRAY_OBJECT      ObjectType = "ARRAY"
+	HASHMAP_OBJECT    ObjectType = "HASHMAP"
 )
 
 var (
@@ -149,4 +150,27 @@ func (a *Array) Inspect() string {
 
 func (a *Array) Type() ObjectType {
 	return ARRAY_OBJECT
+}
+
+// hashmap
+type HashMap struct {
+	Pairs map[string]Object
+}
+
+func (h *HashMap) Inspect() string {
+	var result bytes.Buffer
+	result.WriteString("{")
+	var elems []string
+	var current string
+	for k, v := range h.Pairs {
+		current = fmt.Sprintf("%s : %s", k, v.Inspect())
+		elems = append(elems, current)
+	}
+	result.WriteString(strings.Join(elems, ", "))
+	result.WriteString("}")
+	return result.String()
+}
+
+func (h *HashMap) Type() ObjectType {
+	return HASHMAP_OBJECT
 }
