@@ -288,31 +288,46 @@ func evalAssignment(name ast.Expression, value ast.Expression, env *object.Envir
 	if v.Type() == object.GALAT_MUJI_OBJ {
 		return v
 	}
-	switch (name).(type) {
+	switch n := name.(type) {
 	case *ast.Identifier:
-		n := (name).(*ast.Identifier)
 		_, ok := env.Get(n.Value)
 		if !ok {
 			return newError("reassignment to an undefined variable %s", n.Value)
 		}
 		return env.Set(n.Value, v)
 	case *ast.IndexExpression:
-		return evalAssignmentUsingIndexExpression(name, env)
+		return evalAssignmentForIndexExpression(n, v, env)
 	default:
 		return newError("left operand of assignment operator is neither identifier nor indexexpression. got=%T", name)
 	}
-	// if name != nil {
-	// 	_, ok := env.Get(name.Value)
-	// 	if !ok {
-	// 		return newError("reassignment to an undefined variable %s", name.Value)
-	// 	}
-	// 	v := Eval(value, env)
-	// 	if v.Type() == object.GALAT_MUJI_OBJ {
-	// 		return v
-	// 	}
-	// 	return env.Set(name.Value, v)
-	// }
-	// return newError("identifier is nil")
+}
+
+func evalAssignmentForIndexExpression(ie *ast.IndexExpression, value object.Object, env *object.Environment) object.Object {
+	operand := Eval(ie.Operand, env)
+	index := Eval(ie.Index, env)
+	switch operand.Type() {
+	case object.ARRAY_OBJECT:
+		if index.Type() != object.INTEGER_OBJ {
+			return newError("cannot index an array using %s", index.Type())
+		}
+		a := operand.(*object.Array)
+		i := index.(*object.Integer)
+		if i.Value >= int64(len(a.Arr)) {
+			return newError("array index out of bounds")
+		}
+		a.Arr[i.Value] = value
+		return value
+	case object.HASHMAP_OBJECT:
+		if index.Type() != object.STRING {
+			return newError("cannot index a hashmap using %s", index.Type())
+		}
+		h := operand.(*object.HashMap)
+		i := index.(*object.String)
+		h.Pairs[i.Value] = value
+		return value
+	default:
+		return newError("only arrays and hashmaps can be indexed")
+	}
 }
 
 func evalKaamGarMujiExpression(node *ast.KaamGarMujiExpression, env *object.Environment) object.Object {

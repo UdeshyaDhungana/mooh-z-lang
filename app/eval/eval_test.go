@@ -416,7 +416,7 @@ func TestIndexEval(t *testing.T) {
 			thoos_muji x = {y: 23, "foo": "bar"};
 			x[y]
 			`,
-			23,
+			"bar",
 		},
 	}
 
@@ -439,34 +439,34 @@ func TestJabasammaMujiAndAssignment(t *testing.T) {
 		input    string
 		expected int64
 	}{
-		// {
-		// 	`
-		// 	thoos_muji i = 0;
-		// 	i = 3;
-		// 	`,
-		// 	3,
-		// },
-		// {
-		// 	`
-		// 	thoos_muji sum = kaam_gar_muji(x) {
-		// 		patha_muji x * 2;
-		// 	};
+		{
+			`
+			thoos_muji i = 0;
+			i = 3;
+			`,
+			3,
+		},
+		{
+			`
+			thoos_muji sum = kaam_gar_muji(x) {
+				patha_muji x * 2;
+			};
 
-		// 	thoos_muji x = 2;
+			thoos_muji x = 2;
 
-		// 	jaba_samma_muji(x < 32768) {
-		// 		x = sum(x);
-		// 	}
-		// 	x;
+			jaba_samma_muji(x < 32768) {
+				x = sum(x);
+			}
+			x;
 
-		// 	yedi_muji (x = 4) {
-		// 		100;
-		// 	} nabhae_chikne {
-		// 		200;
-		// 	}
-		// 	`,
-		// 	100,
-		// },
+			yedi_muji (x = 4) {
+				100;
+			} nabhae_chikne {
+				200;
+			}
+			`,
+			100,
+		},
 		{
 			`
 				thoos_muji x = {"foo": "bar"};
