@@ -356,7 +356,7 @@ func TestBuiltinFunctions(t *testing.T) {
 	}
 }
 
-func TestArrayIndex(t *testing.T) {
+func TestIndexEval(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected any
@@ -375,6 +375,14 @@ func TestArrayIndex(t *testing.T) {
 			`thoos_muji y = ["Udeshya", "Dhungana"];
 			y[0]`,
 			"Udeshya",
+		},
+		{
+			`
+			thoos_muji y = "foo";
+			thoos_muji x = {y: 23, "foo": "bar"};
+			x[y]
+			`,
+			23,
 		},
 	}
 
@@ -461,24 +469,25 @@ func TestGhumaMujiExpression(t *testing.T) {
 func TestHashMapEval(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected any
+		expected int64
 	}{
 		{
 			`
 			thoos_muji x = 43;
-			{"foo": "bar", "bar": x}
+			thoos_muji y = {"foo": "bar", "bar": x};
+			lambai_muji(y)
 			`,
 			2,
 		},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		if evaluated.Type() != object.HASHMAP_OBJECT {
-			t.Fatalf("expected hashmap; got=%T", evaluated)
+		if evaluated.Type() != object.INTEGER_OBJ {
+			t.Fatalf("expected integer; got=%T", evaluated)
 		}
-		e := evaluated.(*object.HashMap)
-		if len(e.Pairs) != tt.expected {
-			t.Fatalf("not enough pairs, got=%d, expected=%d", len(e.Pairs), tt.expected)
+		e := evaluated.(*object.Integer)
+		if e.Value != tt.expected {
+			t.Fatalf("not enough pairs, got=%d, expected=%d", e.Value, tt.expected)
 		}
 	}
 }

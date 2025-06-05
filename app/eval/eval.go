@@ -28,8 +28,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return &object.String{Value: node.Value}
 	case *ast.ArrayExpression:
 		return evalArrayExpression(node, env)
-	case *ast.ArrayIndexExpression:
-		return evalArrayIndexExpression(node, env)
+	case *ast.IndexExpression:
+		return evalIndexExpression(node, env)
 	case *ast.JabasammaMujiExpression:
 		return evalJabasammaMujiExpression(node.Condition, node.Consequent, env)
 	case *ast.GhumaMujiExpression:
@@ -366,32 +366,36 @@ func evalArrayExpression(a *ast.ArrayExpression, env *object.Environment) object
 			return evaluated
 		}
 		result.Arr = append(result.Arr, evaluated)
-		result.Length += 1
 	}
 	return &result
 }
 
-func evalArrayIndexExpression(a *ast.ArrayIndexExpression, env *object.Environment) object.Object {
+func evalIndexExpression(a *ast.IndexExpression, env *object.Environment) object.Object {
 	idxEvaluated := Eval(a.Index, env)
 	if idxEvaluated.Type() == object.GALAT_MUJI_OBJ {
 		return idxEvaluated
 	}
-	idx, ok := idxEvaluated.(*object.Integer)
-	if !ok {
-		return newError("index is not an integer")
+	operand := Eval(a.Operand, env)
+	switch operand.Type() {
+	case object.ARRAY_OBJECT:
+		if idxEvaluated.Type() != object.INTEGER_OBJ {
+			return newError("array index must be an integer, got %s", idxEvaluated.Type())
+		}
+		arr := operand.(*object.Array)
+		idx := idxEvaluated.(*object.Integer)
+		return arr.Arr[idx.Value]
+	case object.HASHMAP_OBJECT:
+		if idxEvaluated.Type() != object.STRING {
+			return newError("hashmap index must be a string, got %s", idxEvaluated.Type())
+		}
+		hmap := operand.(*object.HashMap)
+		idx := idxEvaluated.(*object.String)
+		return hmap.Pairs[idx.Value]
+	case object.GALAT_MUJI_OBJ:
+		return operand
+	default:
+		return newError("cannot index %s", operand.Type())
 	}
-	arrEvaluated := Eval(a.Array, env)
-	if arrEvaluated.Type() == object.GALAT_MUJI_OBJ {
-		return arrEvaluated
-	}
-	arr, ok := arrEvaluated.(*object.Array)
-	if !ok {
-		return newError("cannot index a non array object: %s", arr.Inspect())
-	}
-	if int(idx.Value) >= int(arr.Length) {
-		return newError("array out of bounds")
-	}
-	return arr.Arr[idx.Value]
 }
 
 func evalHashExpression(node *ast.HashExpression, env *object.Environment) object.Object {

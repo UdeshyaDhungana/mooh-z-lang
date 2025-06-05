@@ -83,7 +83,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.ASSIGN, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
-	p.registerInfix(token.LBRACKET, p.parseArrayIndexExpression)
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -484,7 +484,6 @@ func (p *Parser) parseArrayExpression() ast.Expression {
 	for {
 		current = p.parseExpressionUsingPratt(LOWEST)
 		result.Elements = append(result.Elements, current)
-		result.Length += 1
 		p.nextToken()
 		if p.curTokenIs(token.COMMA) {
 			p.nextToken()
@@ -498,8 +497,8 @@ func (p *Parser) parseArrayExpression() ast.Expression {
 	return result
 }
 
-func (p *Parser) parseArrayIndexExpression(arrExpr ast.Expression) ast.Expression {
-	result := &ast.ArrayIndexExpression{Token: p.curToken, Array: arrExpr}
+func (p *Parser) parseIndexExpression(expr ast.Expression) ast.Expression {
+	result := &ast.IndexExpression{Token: p.curToken, Operand: expr}
 	p.nextToken()
 	indexExpr := p.parseExpressionUsingPratt(LOWEST)
 	p.nextToken()

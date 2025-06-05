@@ -132,8 +132,7 @@ func (b *Builtin) Inspect() string  { return "builitn function" }
 
 // array
 type Array struct {
-	Arr    []Object
-	Length int64
+	Arr []Object
 }
 
 func (a *Array) Inspect() string {

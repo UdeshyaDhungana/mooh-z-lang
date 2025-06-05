@@ -591,7 +591,7 @@ func TestArrayLength(t *testing.T) {
 	}
 }
 
-func TestArrayIndex(t *testing.T) {
+func TestHashIndex(t *testing.T) {
 	tests := []struct {
 		statement string
 		index     int
@@ -612,6 +612,22 @@ func TestArrayIndex(t *testing.T) {
 			2,
 			4,
 		},
+		{
+			`
+			thoos_muji x = {"foo": 49, "baz": 3};
+			x[0]
+			`,
+			0,
+			49,
+		},
+		{
+			`
+			2;
+			{"udeshya": 49, "baz": 3}[1]
+			`,
+			1,
+			3,
+		},
 	}
 
 	for _, tt := range tests {
@@ -627,7 +643,7 @@ func TestArrayIndex(t *testing.T) {
 		if !ok {
 			t.Fatalf("statement not an expression statement")
 		}
-		_, ok = stmt.Expression.(*ast.ArrayIndexExpression)
+		_, ok = stmt.Expression.(*ast.IndexExpression)
 		if !ok {
 			t.Fatalf("expression not an array expression")
 		}

@@ -291,7 +291,6 @@ func (s *StringExpression) String() string {
 
 type ArrayExpression struct {
 	Token    token.Token
-	Length   int
 	Elements []Expression
 }
 
@@ -306,23 +305,6 @@ func (a *ArrayExpression) String() string {
 		eachString = append(eachString, e.String())
 	}
 	out.WriteString(strings.Join(eachString, ", "))
-	out.WriteString("]")
-	return out.String()
-}
-
-type ArrayIndexExpression struct {
-	Token token.Token
-	Array Expression
-	Index Expression
-}
-
-func (a *ArrayIndexExpression) expressionNode()      {}
-func (a *ArrayIndexExpression) TokenLiteral() string { return a.Token.Literal }
-func (a *ArrayIndexExpression) String() string {
-	var out bytes.Buffer
-	out.WriteString(a.Array.String())
-	out.WriteString("[")
-	out.WriteString(fmt.Sprintf("%d", a.Index))
 	out.WriteString("]")
 	return out.String()
 }
@@ -369,6 +351,7 @@ func (g *GhumaMujiExpression) String() string {
 	return out.String()
 }
 
+/* Hash */
 type HashExpression struct {
 	Token token.Token
 	Pairs map[Expression]Expression
@@ -388,5 +371,23 @@ func (h *HashExpression) String() string {
 	}
 	out.WriteString(strings.Join(inside, ", "))
 	out.WriteString("}")
+	return out.String()
+}
+
+// when you index an array or hashmap
+type IndexExpression struct {
+	Token   token.Token
+	Operand Expression
+	Index   Expression
+}
+
+func (a *IndexExpression) expressionNode()      {}
+func (a *IndexExpression) TokenLiteral() string { return a.Token.Literal }
+func (a *IndexExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString(a.Operand.String())
+	out.WriteString("[")
+	out.WriteString(fmt.Sprintf("%d", a.Index))
+	out.WriteString("]")
 	return out.String()
 }
