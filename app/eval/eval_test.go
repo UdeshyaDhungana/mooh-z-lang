@@ -332,9 +332,19 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`lambai_muji("")`, 0},
 		{`lambai_muji("four")`, 4},
 		{`lambai_muji("hello world")`, 11},
-		{`lambai_muji(1)`, "argument to `len` not supported, got INTEGER"},
+		{`lambai_muji(1)`, "argument to `lambai_muji` not supported, got INTEGER"},
 		{`lambai_muji("one", "two")`, "wrong number of arguments. got=2, want=1"},
 		{`lambai_muji([1,2,4])`, 3},
+		{`lambai_muji({"foo": 2, "bar": 45})`, 2},
+		{
+			`
+				thoos_muji x = [1,2,3,4];
+				khaad_muji(x, 5);
+				lambai_muji(x)
+				x[4]
+			`,
+			5,
+		},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
