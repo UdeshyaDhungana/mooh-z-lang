@@ -345,6 +345,30 @@ func TestBuiltinFunctions(t *testing.T) {
 			`,
 			5,
 		},
+		{
+			`
+				thoos_muji x = [1,2,3,4];
+				thoos_muji z = udaa_muji(x, 0);
+				z
+			`,
+			1,
+		},
+		{
+			`
+				thoos_muji x = [1,2,3,4];
+				thoos_muji z = udaa_muji(x);
+				z
+			`,
+			4,
+		},
+		{
+			`
+				thoos_muji x = [1,2,3,4];
+				thoos_muji z = udaa_muji(x);
+				lambai_muji(x)
+			`,
+			3,
+		},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
