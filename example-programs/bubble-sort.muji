@@ -1,0 +1,23 @@
+
+$ Program to demonstrate bubble sort algorithm $
+thoos_muji bubbleSort = kaam_gar_muji(array) {
+    thoos_muji n = lambai_muji(array);
+    thoos_muji i = 0;
+    thoos_muji temp = 0;
+
+    ghuma_muji(i = 0; i < n - 1; i = i + 1) {
+        thoos_muji j = 0;
+        ghuma_muji(j = 0; j < n - 1 - i; j = j + 1) {
+            yedi_muji(array[j] > array[j+1]) {
+                temp = array[j];
+                array[j] = array[j+1];
+                array[j+1] = temp;
+            }
+        }
+    }
+};
+
+
+thoos_muji myArray = [4,3,5,1,9];
+bubbleSort(myArray);
+bhan_muji(myArray);
