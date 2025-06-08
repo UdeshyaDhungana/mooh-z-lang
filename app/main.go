@@ -11,7 +11,6 @@ import (
 	"github.com/udeshyadhungana/interprerer/app/object"
 	"github.com/udeshyadhungana/interprerer/app/parser"
 	"github.com/udeshyadhungana/interprerer/app/repl"
-	"github.com/udeshyadhungana/interprerer/app/utils"
 )
 
 func main() {
@@ -40,10 +39,9 @@ func interpret(filepath string) {
 	}
 	l := lexer.NewLexer(string(fileContents))
 	p := parser.NewParser(l)
-
 	program := p.ParseProgram()
-	if len(p.Errors()) != 0 {
-		utils.PrintParserErrors(os.Stderr, p.Errors())
+	hasErrs := p.CheckAndReportErrors()
+	if hasErrs {
 		return
 	}
 

@@ -93,6 +93,24 @@ func NewParser(l *lexer.Lexer) *Parser {
 	return p
 }
 
+func (p *Parser) CheckAndReportErrors() bool {
+	if len(p.l.Errors()) > 0 {
+		p.l.ReportErrors()
+		return true
+	}
+	if len(p.errors) > 0 {
+		p.reportErrors()
+		return true
+	}
+	return false
+}
+
+func (p *Parser) reportErrors() {
+	for _, s := range p.errors {
+		fmt.Println(s)
+	}
+}
+
 func (p *Parser) Errors() []string {
 	return p.errors
 }
@@ -139,6 +157,9 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 	for p.curToken.Type != token.EOF {
 		stmt := p.parseStatement()
+		if len(p.errors) > 0 {
+			return nil
+		}
 		program.Statements = append(program.Statements, stmt)
 		p.nextToken()
 	}

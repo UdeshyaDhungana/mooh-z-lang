@@ -348,7 +348,7 @@ func evalGhumaMujiExpression(initialization ast.Node, condition ast.Node, update
 	for isConditionTrue(condition, env) {
 		// check condition
 		result := Eval(body, env)
-		if result.Type() == object.GALAT_MUJI_OBJ {
+		if result.Type() == object.GALAT_MUJI_OBJ || result.Type() == object.PATHA_MUJI_OBJ {
 			return result
 		}
 		up := Eval(update, env)

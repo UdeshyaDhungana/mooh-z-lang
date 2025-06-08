@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"fmt"
 	"unicode/utf8"
 
 	"github.com/udeshyadhungana/interprerer/app/token"
@@ -12,6 +13,8 @@ type Lexer struct {
 	position     int  // current position
 	readPosition int  // current position + 1
 	ch           rune // character under examination
+	inComment    bool
+	errors       []string
 }
 
 func NewLexer(input string) *Lexer {
@@ -72,16 +75,22 @@ func (l *Lexer) NextToken() token.Token {
 	case ',':
 		tok = token.NewToken(token.COMMA, l.ch)
 	case '$':
-		l.readRune()
-		for l.ch != '$' && l.ch != 0 {
-			l.readRune()
-		}
-		if l.ch == 0 {
-			tok.Literal = ""
-			tok.Type = token.EOF
-		} else {
+		if l.inComment {
+			l.inComment = false
 			l.readRune()
 			return l.NextToken()
+		} else {
+			l.inComment = true
+			l.readRune()
+			for l.ch != '$' && l.ch != 0 {
+				l.readRune()
+			}
+			if l.ch == 0 {
+				l.errors = append(l.errors, "unterminated comment")
+				return token.Token{Type: token.EOF, Literal: ""}
+			} else {
+				return l.NextToken()
+			}
 		}
 	case '(':
 		tok = token.NewToken(token.LPAREN, l.ch)
@@ -108,6 +117,16 @@ func (l *Lexer) NextToken() token.Token {
 	}
 	l.readRune()
 	return tok
+}
+
+func (l *Lexer) Errors() []string {
+	return l.errors
+}
+
+func (l *Lexer) ReportErrors() {
+	for _, s := range l.errors {
+		fmt.Println(s)
+	}
 }
 
 func (l *Lexer) readRune() {

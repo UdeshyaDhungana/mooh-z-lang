@@ -76,4 +76,26 @@ var builtins = map[string]*object.Builtin{
 			return object.NULL
 		},
 	},
+	"abs": {
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments to `abs`. expected 1, got %d", len(args))
+			}
+			aa := args[0]
+			switch a := aa.(type) {
+			case *object.Integer:
+				if a.Value < 0 {
+					return &object.Integer{Value: -a.Value}
+				}
+				return a
+			case *object.Float:
+				if a.Value < 0 {
+					return &object.Float{Value: -a.Value}
+				}
+				return a
+			default:
+				return newError("abs() accepts only int or float, got %s", aa.Type())
+			}
+		},
+	},
 }

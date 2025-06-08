@@ -10,6 +10,12 @@ import (
 )
 
 func checkParserErrors(t *testing.T, p *Parser) {
+	/* Check lexer errors */
+	if len(p.l.Errors()) != 0 {
+		t.Errorf("encountered %d errors from lexer\n", len(p.l.Errors()))
+		p.l.ReportErrors()
+		t.FailNow()
+	}
 	errors := p.Errors()
 	if len(errors) == 0 {
 		return
@@ -809,11 +815,24 @@ func TestComments(t *testing.T) {
 func TestCustom(t *testing.T) {
 	tests := []struct {
 		statement string
-		expected  string
 	}{
 		{
-			"thoos_muji x = kaam_gar_muji(x) { patha_muji x; };",
-			"thoos_muji x = kaam_gar_muji(x) { patha_muji x; };",
+			`
+			$ recursion wala program $
+			thoos_muji recursion = kaam_gar_muji(x) {
+    			yedi_muji (x == 0) {
+        			patha_muji 1;
+    			} nabhae_chikne {
+        			patha_muji x * recursion(x - 1);
+    			}
+			};
+
+			$ aba yo comment hale
+			recursion(4);
+
+			$ yo incomplete comment
+			bhan_muji("Hello world")
+			`,
 		},
 	}
 
@@ -821,8 +840,7 @@ func TestCustom(t *testing.T) {
 		l := lexer.NewLexer(tt.statement)
 		p := NewParser(l)
 
-		program := p.ParseProgram()
+		_ = p.ParseProgram()
 		checkParserErrors(t, p)
-		fmt.Println(program.String())
 	}
 }

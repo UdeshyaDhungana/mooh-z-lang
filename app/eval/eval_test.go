@@ -575,26 +575,46 @@ func TestHashMapEval(t *testing.T) {
 
 func TestCustom(t *testing.T) {
 	program := `
-	thoos_muji recursion = kaam_gar_muji(x) {
-			yedi_muji (x == 0) {
-				patha_muji 1;
-			} nabhae_chikne {
-			 	patha_muji x * recursion(x - 1);
-			}
+$ Program to demonstrate newton rhapson's method in muji lang $
+
+thoos_muji nrm = kaam_gar_muji(a, b, c, initialGuess, tolerance, maxIterations) {
+    thoos_muji x = initialGuess;
+    thoos_muji i = 0;
+    thoos_muji fx = 0.0;
+    thoos_muji dfx = 0.0;
+    thoos_muji xNext = 0.0;
+
+    ghuma_muji(i = 0; i < maxIterations; i = i + 1) {
+		fx = a * x * x + b * x + c;
+        dfx = 2 * a * x + b;
+
+        yedi_muji(abs(dfx) < 0.00000000001) {
+            patha_muji "division by zero risk";
+        }
+
+        xNext = x - (fx / dfx);
+
+        yedi_muji (abs(xNext - x) < tolerance) {
+            patha_muji xNext;
+        }
+        x = xNext;
 	}
 
-	recursion(4)
+    patha_muji "Failed to converge";
+};
+
+$ x² - 3x + 2 = 0 → roots are x=1 and x=2 $
+thoos_muji a = 1;
+thoos_muji b = -3;
+thoos_muji c = 2;
+
+thoos_muji res = nrm(a, b, c, 0.0, 0.0000001, 100);
+
+bhan_muji(res)
 	`
 
 	evaluated := testEval(program)
 	if evaluated != nil && evaluated.Type() == object.GALAT_MUJI_OBJ {
 		t.Fatalf("custom test failed, go figure!")
 	}
-	// f, ok := evaluated.(*object.Float)
-	// if !ok {
-	// 	t.Fatalf("not ok")
-	// }
-	// if f.Value != -5.0 {
-	// 	t.Fatalf("not ok")
-	// }
 }
