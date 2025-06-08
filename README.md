@@ -58,12 +58,12 @@ thoos_muji no = jhut_muji;
 ### Conditionals
 Only the vanilla if/if else statement (with blocks) is supported.
 ```muji
-$ No alternative
+$ No alternative $
 yedi_muji(condition) {
     ...
 }
 
-$ With alternative
+$ With alternative $
 yedi_muji(condition) {
     ...
 } nabhae_chikne {
@@ -146,6 +146,8 @@ Applicable to floats and intgers. Calcualtes the absolute value
 thoos_muji x = -69;
 thoos_muji y = abs(x);
 ```
+
+Please check out the `example-programs` to know more.
 
 Please note that the language is in the pre-alpha stage. You may encounter bugs. We encourage you to report any issues you find. 
 
