@@ -3,20 +3,19 @@ $ Program to demonstrate newton rhapson's method in muji lang $
 
 thoos_muji nrm = kaam_gar_muji(a, b, c, initialGuess, tolerance, maxIterations) {
     thoos_muji x = initialGuess;
-    thoos_muji i = 0;
-    thoos_muji fx = 0;
-    thoos_muji dfx = 0;
-    thoos_muji xNext = 0;
+    thoos_muji fx = 0.0;
+    thoos_muji dfx = 0.0;
+    thoos_muji xNext = 0.0;
 
-    ghuma_muji(i = 0; i < maxIterations; i = i + 1) {
+    ghuma_muji(thoos_muji i = 0; i < maxIterations; i = i + 1) {
 		fx = a * x * x + b * x + c;
         dfx = 2 * a * x + b;
 
-        yedi_muji(dfx < 0.000000000000001) {
+        yedi_muji(abs(dfx) < 0.000000000000001) {
             patha_muji "division by zero risk";
         }
 
-        xNext = (x - fx) / dfx;
+        xNext = x - fx / dfx;
 
         yedi_muji (abs(xNext - x) < tolerance) {
             patha_muji xNext;
@@ -28,9 +27,9 @@ thoos_muji nrm = kaam_gar_muji(a, b, c, initialGuess, tolerance, maxIterations) 
 };
 
 $ x² - 3x + 2 = 0 → roots are x=1 and x=2 $
-thoos_muji a = 1;
-thoos_muji b = -3;
-thoos_muji c = 2;
+thoos_muji a = 1.0;
+thoos_muji b = -3.0;
+thoos_muji c = 2.0;
 
 thoos_muji res = nrm(a, b, c, 0, 0.0000001, 100);
 

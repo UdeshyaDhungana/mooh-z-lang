@@ -20,6 +20,17 @@ func (e *Environment) Get(name string) (Object, bool) {
 	return obj, ok
 }
 
+/* Return the exact environment level where a variable exists */
+func (e *Environment) GetEnv(name string) *Environment {
+	_, ok := e.store[name]
+	if !ok {
+		if e.outer != nil {
+			return e.outer.GetEnv(name)
+		}
+	}
+	return e
+}
+
 func (e *Environment) Set(name string, val Object) Object {
 	e.store[name] = val
 	return val

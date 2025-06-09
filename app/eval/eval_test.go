@@ -250,11 +250,11 @@ func TestErrorHandling(t *testing.T) {
 	}{
 		{
 			"5 + sacho_muji;",
-			"type mismatch: INTEGER + BOOLEAN",
+			"unsupported operation INTEGER + BOOLEAN",
 		},
 		{
 			"5 + jhut_muji; 5;",
-			"type mismatch: INTEGER + BOOLEAN",
+			"unsupported operation INTEGER + BOOLEAN",
 		},
 		{
 			"-sacho_muji;",
@@ -262,15 +262,15 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			"sacho_muji + jhut_muji;",
-			"unknown operator: BOOLEAN + BOOLEAN",
+			"unsupported operation BOOLEAN + BOOLEAN",
 		},
 		{
 			"5; sacho_muji + jhut_muji; 5;",
-			"unknown operator: BOOLEAN + BOOLEAN",
+			"unsupported operation BOOLEAN + BOOLEAN",
 		},
 		{
 			"yedi_muji (10 > 1) { sacho_muji + jhut_muji; }",
-			"unknown operator: BOOLEAN + BOOLEAN",
+			"unsupported operation BOOLEAN + BOOLEAN",
 		},
 		{
 			`yedi_muji (10 > 1) {
@@ -279,7 +279,7 @@ func TestErrorHandling(t *testing.T) {
 				}
 				patha_muji 1;
 			}`,
-			"unknown operator: BOOLEAN + BOOLEAN",
+			"unsupported operation BOOLEAN + BOOLEAN",
 		},
 		{
 			"foobar;",
@@ -575,19 +575,49 @@ func TestHashMapEval(t *testing.T) {
 
 func TestCustom(t *testing.T) {
 	program := `
-		thoos_muji sum = kaam_gar_muji(min, max) {
-			thoos_muji s = 0;
-			thoos_muji i = 0;
-			ghuma_muji (i = min; i <= max; i = i+1) {
-				s = s + i;
-			}
-			patha_muji s;
-		};
+	$ Program to demonstrate newton rhapson's method in muji lang $
 
-		thoos_muji total = sum(1, 10);
+	thoos_muji nrm = kaam_gar_muji(a, b, c, initialGuess, tolerance, maxIterations) {
+		thoos_muji x = initialGuess;
+		thoos_muji fx = 0.0;
+		thoos_muji dfx = 0.0;
+		thoos_muji xNext = 0.0;
+
+		ghuma_muji(thoos_muji i = 0; i < maxIterations; i = i + 1) {
+			fx = a * x * x + b * x + c;
+			dfx = 2 * a * x + b;
+
+			yedi_muji(abs(dfx) < 0.000000000000001) {
+				patha_muji "division by zero risk";
+			}
+
+			xNext = x - fx / dfx;
+
+			yedi_muji (abs(xNext - x) < tolerance) {
+				patha_muji xNext;
+			}
+			x = xNext;
+		}
+
+		patha_muji "Failed to converge";
+	};
+
+	$ x² - 3x + 2 = 0 → roots are x=1 and x=2 $
+	thoos_muji a = 1.0;
+	thoos_muji b = -3.0;
+	thoos_muji c = 2.0;
+
+	thoos_muji res = nrm(a, b, c, 0, 0.0000001, 100);
 	`
 
 	evaluated := testEval(program)
+	if evaluated.Type() != object.FLOAT_OBJ {
+		t.Fatalf("Failed, wrong return type")
+	}
+	e := evaluated.(*object.Float)
+	if e.Value != 1 {
+		t.Fatalf("Failed, wrong sum")
+	}
 	if evaluated != nil && evaluated.Type() == object.GALAT_MUJI_OBJ {
 		t.Fatalf("custom test failed, go figure!")
 	}

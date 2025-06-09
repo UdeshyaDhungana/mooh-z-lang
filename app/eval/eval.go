@@ -253,15 +253,28 @@ func evalLT(left object.Object, right object.Object) object.Object {
 }
 
 func evalGT(left object.Object, right object.Object) object.Object {
-	lt := evalLT(left, right)
-	if lt.Type() == object.GALAT_MUJI_OBJ {
-		return lt
+	if !areBothNumbers(left, right) {
+		return newError("cannot use '>' operator for %s", left.Type())
 	}
-	l := lt.(*object.Boolean)
-	if l.Value {
-		return object.FALSE
+	if left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ {
+		l := left.(*object.Integer).Value
+		r := right.(*object.Integer).Value
+		return utils.GetBoolRef(l > r)
 	}
-	return object.TRUE
+	var leftVal, rightVal float64
+	if left.Type() == object.INTEGER_OBJ {
+		leftVal = float64(left.(*object.Integer).Value)
+	} else {
+		leftVal = (left.(*object.Float).Value)
+	}
+
+	if right.Type() == object.INTEGER_OBJ {
+		rightVal = float64(right.(*object.Integer).Value)
+	} else {
+		rightVal = right.(*object.Float).Value
+	}
+
+	return utils.GetBoolRef(leftVal > rightVal)
 }
 
 func evalInfixExpression(left object.Object, operator string, right object.Object) object.Object {
@@ -340,30 +353,38 @@ func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative 
 		if b == nil {
 			return object.NULL
 		}
-		return evalStatements(b.Statements, env)
+		blockEnv := object.NewEnclosedEnvironment(env)
+		return evalStatements(b.Statements, blockEnv)
 	}
 }
 
 func evalJabasammaMujiExpression(condition ast.Node, consequent ast.Node, env *object.Environment) object.Object {
 	var result object.Object
-	for isConditionTrue(condition, env) {
-		result = Eval(consequent, env)
+	newEnv := object.NewEnclosedEnvironment(env)
+	for isConditionTrue(condition, newEnv) {
+		body, ok := consequent.(*ast.BlockStatement)
+		if !ok {
+			return newError("body of jaba samma muji must be a block statement")
+		}
+		newEnv := object.NewEnclosedEnvironment(newEnv)
+		result = Eval(body, newEnv)
 	}
 	return result
 }
 
 func evalGhumaMujiExpression(initialization ast.Node, condition ast.Node, update ast.Node, body ast.Node, env *object.Environment) object.Object {
-	init := Eval(initialization, env)
+	newEnv := object.NewEnclosedEnvironment(env)
+	init := Eval(initialization, newEnv)
 	if init.Type() == object.GALAT_MUJI_OBJ {
 		return init
 	}
-	for isConditionTrue(condition, env) {
+	for isConditionTrue(condition, newEnv) {
 		// check condition
-		result := Eval(body, env)
+		result := Eval(body, newEnv)
 		if result.Type() == object.GALAT_MUJI_OBJ || result.Type() == object.PATHA_MUJI_OBJ {
 			return result
 		}
-		up := Eval(update, env)
+		up := Eval(update, newEnv)
 		if up.Type() == object.GALAT_MUJI_OBJ {
 			return result
 		}
@@ -429,7 +450,9 @@ func evalAssignment(name ast.Expression, value ast.Expression, env *object.Envir
 		if !ok {
 			return newError("reassignment to an undefined variable %s", n.Value)
 		}
-		return env.Set(n.Value, v)
+		/* Get the environment in which the varible lies */
+		e := env.GetEnv(n.Value)
+		return e.Set(n.Value, v)
 	case *ast.IndexExpression:
 		return evalAssignmentForIndexExpression(n, v, env)
 	default:
