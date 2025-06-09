@@ -1,0 +1,14 @@
+
+$ Program to calculate from min to max (inclusive) $
+
+thoos_muji sum = kaam_gar_muji(min, max) {
+    thoos_muji s = 0;
+    thoos_muji i = 0;
+    ghuma_muji (i = min; i <= max; i = i+1) {
+        s = s + i;
+    }
+    patha_muji s;
+};
+
+thoos_muji total = sum(1, 10);
+bhan_muji(total);

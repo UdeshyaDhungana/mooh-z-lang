@@ -12,9 +12,9 @@ thoos_muji nrm = kaam_gar_muji(a, b, c, initialGuess, tolerance, maxIterations) 
 		fx = a * x * x + b * x + c;
         dfx = 2 * a * x + b;
 
-        yedi_muji(dfx < 0.00000000001) {
+        yedi_muji(dfx < 0.000000000000001) {
             patha_muji "division by zero risk";
-    }
+        }
 
         xNext = (x - fx) / dfx;
 

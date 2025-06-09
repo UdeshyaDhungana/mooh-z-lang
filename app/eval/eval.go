@@ -283,11 +283,17 @@ func evalInfixExpression(left object.Object, operator string, right object.Objec
 		if isGT.Type() == object.GALAT_MUJI_OBJ {
 			return isGT
 		}
+		if isGT == object.TRUE {
+			return isGT
+		}
 		isEQ := evalEQ(left, right)
 		if isEQ.Type() == object.GALAT_MUJI_OBJ {
 			return isEQ
 		}
-		return &object.Boolean{Value: utils.IsTruthy(isGT) || utils.IsTruthy(isEQ)}
+		if isEQ == object.TRUE {
+			return isEQ
+		}
+		return object.FALSE
 	case "<":
 		return evalLT(left, right)
 	case "<=":
@@ -295,11 +301,17 @@ func evalInfixExpression(left object.Object, operator string, right object.Objec
 		if isLT.Type() == object.GALAT_MUJI_OBJ {
 			return isLT
 		}
+		if isLT == object.TRUE {
+			return isLT
+		}
 		isEQ := evalEQ(left, right)
 		if isEQ.Type() == object.GALAT_MUJI_OBJ {
 			return isEQ
 		}
-		return &object.Boolean{Value: utils.IsTruthy(isLT) || utils.IsTruthy(isEQ)}
+		if isEQ == object.TRUE {
+			return object.TRUE
+		}
+		return object.FALSE
 	default:
 		return newError("unsupported operator %s", operator)
 	}
