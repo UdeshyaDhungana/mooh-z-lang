@@ -15,7 +15,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression, env)
 	case *ast.YediMujiExpression:
-		return evalYediMujiStatement(node.Condition, node.Consequent, node.Alternative, env)
+		return evalYediMujiStatement(node, env)
 	case *ast.PathaMujiStatement:
 		return evalPathaMujiStatement(node.Value, env)
 	case *ast.ThoosMujiStatement:
@@ -133,7 +133,7 @@ func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 }
 
 /* Infix begin */
-func evalFantasticFour(left object.Object, operator string, right object.Object) object.Object {
+func evalArithmetic(left object.Object, operator string, right object.Object) object.Object {
 	if left.Type() == right.Type() && operator == "+" {
 		switch l := left.(type) {
 		case *object.String:
@@ -160,6 +160,8 @@ func evalFantasticFour(left object.Object, operator string, right object.Object)
 			res.Value = l * r
 		case "/":
 			res.Value = l / r
+		case "%":
+			res.Value = l % r
 		default:
 			return newError("unsupported operation %s %s %s", left.Type(), operator, right.Type())
 		}
@@ -279,8 +281,8 @@ func evalGT(left object.Object, right object.Object) object.Object {
 
 func evalInfixExpression(left object.Object, operator string, right object.Object) object.Object {
 	switch operator {
-	case "+", "-", "*", "/":
-		return evalFantasticFour(left, operator, right)
+	case "+", "-", "*", "/", "%":
+		return evalArithmetic(left, operator, right)
 	case "==":
 		return evalEQ(left, right)
 	case "!=":
@@ -337,25 +339,25 @@ func areBothNumbers(left object.Object, right object.Object) bool {
 
 /* End Infix */
 
-func evalYediMujiStatement(condition ast.Node, consequent ast.Node, alternative ast.Node, env *object.Environment) object.Object {
-	if isConditionTrue(condition, env) {
-		b, ok := consequent.(*ast.BlockStatement)
-		if !ok {
-			// maybe we will support non block statements in the future
-			return nil
-		}
-		return evalStatements(b.Statements, env)
-	} else {
-		b, ok := alternative.(*ast.BlockStatement)
-		if !ok {
-			return nil
-		}
-		if b == nil {
-			return object.NULL
-		}
-		blockEnv := object.NewEnclosedEnvironment(env)
-		return evalStatements(b.Statements, blockEnv)
+func evalYediMujiStatement(yediMujiExpr *ast.YediMujiExpression, env *object.Environment) object.Object {
+	if isConditionTrue(yediMujiExpr.Condition, env) {
+		return evalStatements(yediMujiExpr.Consequent.Statements, env)
 	}
+
+	// Evaluate alternatives now
+	if yediMujiExpr.Alternatives != nil {
+		for _, alt := range yediMujiExpr.Alternatives {
+			if isConditionTrue(alt.Condition, env) {
+				return evalStatements(alt.Consequent.Statements, env)
+			}
+		}
+	}
+
+	if yediMujiExpr.Fallback != nil {
+		blockEnv := object.NewEnclosedEnvironment(env)
+		return evalStatements(yediMujiExpr.Fallback.Statements, blockEnv)
+	}
+	return object.NULL
 }
 
 func evalJabasammaMujiExpression(condition ast.Node, consequent ast.Node, env *object.Environment) object.Object {

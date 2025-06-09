@@ -498,6 +498,16 @@ func TestYediMujiStatementParsing(t *testing.T) {
 			};`,
 			"",
 		},
+		{
+			`yedi_muji(jhut_muji) {
+				69;
+			} nabhae_muji (3 < 10) {
+			 	420;
+			} nabhae_chikne {
+				1;
+			}`,
+			"",
+		},
 	}
 
 	for _, tt := range tests {

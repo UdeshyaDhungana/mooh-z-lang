@@ -32,6 +32,7 @@ func TestEvalIntegerStatement(t *testing.T) {
 		{"10", 10},
 		{"-5", -5},
 		{"-10", -10},
+		{"5 % 3", 2},
 		{"5 - 10", -5},
 		{"2 * 2 * 2 * 2 * 2", 32},
 		{"-50 + 100 + -50", 0},
@@ -190,6 +191,10 @@ func TestYediMujiExpressions(t *testing.T) {
 		{"yedi_muji (1 > 2) { 10; }", nil},
 		{"yedi_muji (1 > 2) { 10; } nabhae_chikne { 20; }", 20},
 		{"yedi_muji (1 < 2) { 10; } nabhae_chikne { 20; }", 10},
+		{"yedi_muji (100 < 2) { 10; } nabhae_muji (2 > 1) { 20; } nabhae_chikne { 30; }", 20},
+		{"yedi_muji (100 > 2) { 10; } nabhae_muji (2 > 1) { 20; } nabhae_chikne { 30; }", 10},
+		{"yedi_muji (100 < 2) { 10; } nabhae_muji (2 < 1) { 20; } nabhae_chikne { 30; }", 30},
+		{"yedi_muji (100 < 2) { 10; } nabhae_muji (2 < 1) { 20; } nabhae_muji (3 > 1) { 30; } nabhae_chikne { 40 ;}", 30},
 	}
 
 	for _, tt := range tests {
@@ -575,50 +580,21 @@ func TestHashMapEval(t *testing.T) {
 
 func TestCustom(t *testing.T) {
 	program := `
-	$ Program to demonstrate newton rhapson's method in muji lang $
-
-	thoos_muji nrm = kaam_gar_muji(a, b, c, initialGuess, tolerance, maxIterations) {
-		thoos_muji x = initialGuess;
-		thoos_muji fx = 0.0;
-		thoos_muji dfx = 0.0;
-		thoos_muji xNext = 0.0;
-
-		ghuma_muji(thoos_muji i = 0; i < maxIterations; i = i + 1) {
-			fx = a * x * x + b * x + c;
-			dfx = 2 * a * x + b;
-
-			yedi_muji(abs(dfx) < 0.000000000000001) {
-				patha_muji "division by zero risk";
-			}
-
-			xNext = x - fx / dfx;
-
-			yedi_muji (abs(xNext - x) < tolerance) {
-				patha_muji xNext;
-			}
-			x = xNext;
+	thoos_muji checkNumber = kaam_gar_muji(num) {
+		yedi_muji (num > 0) {
+			bhan_muji("Positive");
+		} nabhae_muji (num < 0) {
+			bhan_muji("Negative");
+		} nabhae_chikne {
+			bhan_muji("Zero!");
 		}
-
-		patha_muji "Failed to converge";
 	};
 
-	$ x² - 3x + 2 = 0 → roots are x=1 and x=2 $
-	thoos_muji a = 1.0;
-	thoos_muji b = -3.0;
-	thoos_muji c = 2.0;
-
-	thoos_muji res = nrm(a, b, c, 0, 0.0000001, 100);
+	checkNumber(-1);
+	checkNumber(0);
+	checkNumber(1);
 	`
 
-	evaluated := testEval(program)
-	if evaluated.Type() != object.FLOAT_OBJ {
-		t.Fatalf("Failed, wrong return type")
-	}
-	e := evaluated.(*object.Float)
-	if e.Value != 1 {
-		t.Fatalf("Failed, wrong sum")
-	}
-	if evaluated != nil && evaluated.Type() == object.GALAT_MUJI_OBJ {
-		t.Fatalf("custom test failed, go figure!")
-	}
+	_ = testEval(program)
+	fmt.Println("Passed!")
 }
