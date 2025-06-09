@@ -24,6 +24,7 @@ const (
 	BANG     = "!"
 	ASTERISK = "*"
 	SLASH    = "/"
+	MOD      = "%"
 
 	LT     = "<"
 	GT     = ">"
@@ -57,6 +58,7 @@ const (
 	KAAM_GAR_MUJI = "KAAM_GAR_MUJI"
 
 	YEDI_MUJI     = "YEDI_MUJI"
+	NABHAE_MUJI   = "NABHAE_MUJI"
 	NABHAE_CHIKNE = "NABHAE_CHIKNE"
 	PATHA_MUJI    = "PATHA_MUJI"
 
@@ -85,6 +87,7 @@ var keywords = map[string]TokenType{
 	"patha_muji":      PATHA_MUJI,
 	"jaba_samma_muji": JABA_SAMMA_MUJI,
 	"ghuma_muji":      GHUMA_MUJI,
+	"nabhae_muji":     NABHAE_MUJI,
 }
 
 // this distinguishes reserved keywords from variable names

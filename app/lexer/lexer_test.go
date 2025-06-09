@@ -20,8 +20,10 @@ func TestNextToken(t *testing.T) {
 	
 	yedi_muji (5 < 10) {
 		patha_muji sacho_muji;
-	} nabhae_chikne {
+	} nabhae_muji (3 < 10) {
 	 	patha_muji jhut_muji;
+	} nabhae_chikne {
+	 	patha_muji sacho_muji;
 	}
 	
 	10 == 10;
@@ -106,10 +108,21 @@ func TestNextToken(t *testing.T) {
 		{token.SACHO_MUJI, "sacho_muji"},
 		{token.SEMICOLON, ";"},
 		{token.RBRACE, "}"},
-		{token.NABHAE_CHIKNE, "nabhae_chikne"},
+		{token.NABHAE_MUJI, "nabhae_muji"},
+		{token.LPAREN, "("},
+		{token.INT, "3"},
+		{token.LT, "<"},
+		{token.INT, "10"},
+		{token.RPAREN, ")"},
 		{token.LBRACE, "{"},
 		{token.PATHA_MUJI, "patha_muji"},
 		{token.JHUT_MUJI, "jhut_muji"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.NABHAE_CHIKNE, "nabhae_chikne"},
+		{token.LBRACE, "{"},
+		{token.PATHA_MUJI, "patha_muji"},
+		{token.SACHO_MUJI, "sacho_muji"},
 		{token.SEMICOLON, ";"},
 		{token.RBRACE, "}"},
 		{token.INT, "10"},

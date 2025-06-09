@@ -50,6 +50,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.MOD:      PRODUCT,
 	token.LPAREN:   CALL,
 	token.LBRACKET: CALL,
 }
@@ -80,6 +81,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
+	p.registerInfix(token.MOD, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.GT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
@@ -265,14 +267,49 @@ func (p *Parser) parseYediMujiExpression() ast.Expression {
 
 	stmt.Consequent = p.parseBlockStatement()
 
-	if !p.peekTokenIs(token.NABHAE_CHIKNE) {
+	// if statement with no consequences
+	if !p.peekTokenIs(token.NABHAE_CHIKNE) && !p.peekTokenIs(token.NABHAE_MUJI) {
 		return stmt
 	}
+
+	// with alternatives
+	for p.peekTokenIs(token.NABHAE_MUJI) {
+		p.nextToken()
+		exp := p.parseNabhaeMujiExpression()
+		stmt.Alternatives = append(stmt.Alternatives, exp)
+	}
+
+	// with fallback
+	if !p.expectPeek(token.NABHAE_CHIKNE) {
+		return nil
+	}
 	p.nextToken()
-	p.nextToken()
-	stmt.Alternative = p.parseBlockStatement()
+	stmt.Fallback = p.parseBlockStatement()
 
 	return stmt
+}
+
+func (p *Parser) parseNabhaeMujiExpression() *ast.NabhaeMujiExpression {
+	res := &ast.NabhaeMujiExpression{Token: p.curToken}
+	if !p.curTokenIs(token.NABHAE_MUJI) {
+		p.errors = append(p.errors, "yedi muji alternative expression must begin with `nabhae_muji`")
+	}
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.nextToken()
+	condition := p.parseExpressionUsingPratt(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	res.Condition = condition
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	consequent := p.parseBlockStatement()
+	res.Consequent = consequent
+	return res
 }
 
 func (p *Parser) parseJabasammaMujiExpression() ast.Expression {

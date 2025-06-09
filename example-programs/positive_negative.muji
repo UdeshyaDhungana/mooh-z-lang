@@ -1,0 +1,16 @@
+
+$ The ABCD of interview questions $
+
+thoos_muji checkNumber = kaam_gar_muji(num) {
+    yedi_muji (num > 0) {
+        bhan_muji("Positive");
+    } nabhae_muji (num < 0) {
+        bhan_muji("Negative");
+    } nabhae_chikne {
+        bhan_muji("Zero!");
+    }
+};
+
+checkNumber(-1);
+checkNumber(0);
+checkNumber(1);

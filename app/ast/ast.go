@@ -211,10 +211,11 @@ func (y *BlockStatement) String() string {
 
 // YEDI MUJI expression
 type YediMujiExpression struct {
-	Token       token.Token
-	Condition   Expression
-	Consequent  *BlockStatement
-	Alternative *BlockStatement
+	Token        token.Token
+	Condition    Expression
+	Consequent   *BlockStatement
+	Alternatives []*NabhaeMujiExpression
+	Fallback     *BlockStatement
 }
 
 func (y *YediMujiExpression) expressionNode()      {}
@@ -227,11 +228,34 @@ func (y *YediMujiExpression) String() string {
 	out.WriteString(") ")
 	out.WriteString(y.Consequent.String())
 
-	if y.Alternative != nil {
-		out.WriteString("nabhae_chikne ")
-		out.WriteString(y.Alternative.String())
+	if y.Alternatives != nil {
+		for _, a := range y.Alternatives {
+			out.WriteString(a.String())
+		}
 	}
 
+	if y.Fallback != nil {
+		out.WriteString("nabhae_chikne ")
+		out.WriteString(y.Fallback.String())
+	}
+
+	return out.String()
+}
+
+type NabhaeMujiExpression struct {
+	Token      token.Token
+	Condition  Expression
+	Consequent *BlockStatement
+}
+
+func (y *NabhaeMujiExpression) expressionNode()      {}
+func (y *NabhaeMujiExpression) TokenLiteral() string { return y.Token.Literal }
+func (y *NabhaeMujiExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("nabhae_muji (")
+	out.WriteString(y.Condition.String())
+	out.WriteString(")")
+	out.WriteString(y.Consequent.String())
 	return out.String()
 }
 
