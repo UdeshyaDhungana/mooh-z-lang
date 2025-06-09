@@ -194,6 +194,7 @@ func TestYediMujiExpressions(t *testing.T) {
 		{"yedi_muji (100 < 2) { 10; } nabhae_muji (2 > 1) { 20; } nabhae_chikne { 30; }", 20},
 		{"yedi_muji (100 > 2) { 10; } nabhae_muji (2 > 1) { 20; } nabhae_chikne { 30; }", 10},
 		{"yedi_muji (100 < 2) { 10; } nabhae_muji (2 < 1) { 20; } nabhae_chikne { 30; }", 30},
+		{"yedi_muji (100 < 2) { 10; } nabhae_muji (2 < 1) { 20; } nabhae_muji (3 > 1) { 30; } nabhae_chikne { 40 ;}", 30},
 	}
 
 	for _, tt := range tests {
