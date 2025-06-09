@@ -158,7 +158,7 @@ Please note that the language is in the pre-alpha stage. You may encounter bugs.
 Please help us grow by contributing! If you wish to add more features, please write corresponding tests as well!
 
 Next step:
-- [ ] Support for block level scoping
+- [ ] Improve error messages
 
 Build using
 
